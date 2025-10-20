@@ -1,37 +1,27 @@
 // netlify/functions/get-productos.js
-
 const { MongoClient } = require('mongodb');
 
-// ¡IMPORTANTE! Esta variable se configura en el panel de Netlify, NO aquí.
-const MONGODB_URI = process.env.MONGODB_URI; 
+const MONGODB_URI = process.env.MONGODB_URI; // config en Netlify (Settings > Site > Environment)
 
-exports.handler = async (event, context) => {
-  // Solo permitimos el método GET para obtener datos
+exports.handler = async (event) => {
   if (event.httpMethod !== 'GET') {
     return { statusCode: 405, body: 'Método no permitido' };
   }
 
+  if (!MONGODB_URI) {
+    return { statusCode: 500, body: JSON.stringify({ error: 'MONGODB_URI no configurada' }) };
+  }
+
   let client;
-
   try {
-    client = new MongoClient(MONGODB_URI);
-    await client.connect();
-    
-    // Cambia 'miscelanea' por el nombre de tu base de datos en Atlas
-    const db = client.db('miscelanea'); 
-    
-    // Cambia 'inventario' por el nombre de tu colección
-    const productosCollection = db.collection('inventario'); 
-
-    // Obtener todos los productos
-    const productos = await productosCollection.find({}).toArray();
+    client = await MongoClient.connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+    const db = client.db(); // si usas un nombre de DB en la URI, esto es suficiente
+    const productos = await db.collection('productos').find({}).toArray();
 
     return {
       statusCode: 200,
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(productos),
     };
-
   } catch (error) {
     console.error('Error de MongoDB:', error);
     return {
