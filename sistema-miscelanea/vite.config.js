@@ -6,5 +6,6 @@ import react from '@vitejs/plugin-react'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  // ¡Asegúrate de que NO haya ninguna configuración de 'css' o 'postcss' aquí!
+  // 💡 AÑADE ESTA LÍNEA PARA RESOLVER LA PANTALLA BLANCA EN NETLIFY
+  base: './', 
 });
