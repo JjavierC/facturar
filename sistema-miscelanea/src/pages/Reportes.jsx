@@ -4,7 +4,6 @@ function Reportes() {
   const [idBusqueda, setIdBusqueda] = useState("");
   const [fechaBusqueda, setFechaBusqueda] = useState("");
 
-  // Datos de ejemplo (puedes reemplazar con datos reales desde MongoDB)
   const reportes = [
 
   ];

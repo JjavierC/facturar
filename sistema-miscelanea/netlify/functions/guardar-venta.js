@@ -1,65 +1,61 @@
 // netlify/functions/guardar-venta.js
+const { MongoClient } = require("mongodb");
 
-const { MongoClient } = require('mongodb');
-const { ObjectId } = require('mongodb'); 
-const MONGODB_URI = process.env.MONGODB_URI; 
-
-exports.handler = async (event, context) => {
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: JSON.stringify({ message: 'Método no permitido' }) };
+exports.handler = async (event) => {
+  if (event.httpMethod !== "POST") {
+    return { statusCode: 405, body: "Método no permitido" };
   }
 
-  let client;
-  let ventaData;
-
+  const client = new MongoClient(process.env.MONGO_URI);
   try {
-    ventaData = JSON.parse(event.body);
+    const data = JSON.parse(event.body);
+    const { items, subtotal, iva, total } = data;
 
-    client = new MongoClient(MONGODB_URI);
+    if (!items || items.length === 0) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ message: "No hay productos en la venta." }),
+      };
+    }
+
     await client.connect();
-    
-    const db = client.db('miscelanea'); 
-    const inventarioCollection = db.collection('inventario');
-    const ventasCollection = db.collection('ventas'); // Nueva colección para guardar ventas
+    const db = client.db("facturacion");
 
-    // 1. Guardar la Venta (Registro)
-    const ventaRecord = {
-        fecha: new Date(),
-        items: ventaData.items,
-        subtotal: ventaData.subtotal,
-        iva: ventaData.iva,
-        total: ventaData.total,
-        // Puedes agregar campos como 'metodoPago: ventaData.pago'
+    // Crear documento de venta
+    const nuevaVenta = {
+      items,
+      subtotal: Number(subtotal) || 0,
+      iva: Number(iva) || 0,
+      total: Number(total) || 0,
+      fecha_venta: new Date(),
     };
-    const ventaResult = await ventasCollection.insertOne(ventaRecord);
 
-    // 2. Descontar Inventario
-    const promises = ventaData.items.map(item => {
-        return inventarioCollection.updateOne(
-            { _id: new ObjectId(item._id) }, // Buscar por ID
-            { $inc: { stock: -item.cantidad } } // Descontar la cantidad vendida
-        );
-    });
-    await Promise.all(promises);
+    // Guardar la venta
+    const result = await db.collection("ventas").insertOne(nuevaVenta);
+
+    // Actualizar el stock de cada producto vendido
+    const operacionesStock = items.map((item) =>
+      db.collection("productos").updateOne(
+        { _id: item._id },
+        { $inc: { stock: -item.cantidad } }
+      )
+    );
+    await Promise.all(operacionesStock);
 
     return {
-      statusCode: 201,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        message: "Venta registrada e inventario actualizado",
-        ventaId: ventaResult.insertedId 
+      statusCode: 200,
+      body: JSON.stringify({
+        message: "Venta registrada correctamente.",
+        ventaId: result.insertedId,
       }),
     };
-
   } catch (error) {
-    console.error('Error en el proceso de venta:', error);
+    console.error("Error al registrar la venta:", error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Fallo al procesar la venta y actualizar el inventario.' }),
+      body: JSON.stringify({ message: "Error interno del servidor." }),
     };
   } finally {
-    if (client) {
-      await client.close();
-    }
+    await client.close();
   }
 };
