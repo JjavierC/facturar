@@ -1,15 +1,13 @@
 // netlify/functions/get-productos.js
 const { MongoClient } = require("mongodb");
 
-const MONGODB_URI = process.env.MONGODB_URI; // configurada en Netlify (Settings → Environment variables)
+const MONGODB_URI = process.env.MONGODB_URI;
 
 exports.handler = async (event) => {
-  // Solo permitir método GET
   if (event.httpMethod !== "GET") {
     return { statusCode: 405, body: "Método no permitido" };
   }
 
-  // Verificar que la variable esté configurada
   if (!MONGODB_URI) {
     return {
       statusCode: 500,
@@ -20,7 +18,6 @@ exports.handler = async (event) => {
   let client;
 
   try {
-    // Conectar con timeout controlado
     client = new MongoClient(MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
@@ -28,15 +25,13 @@ exports.handler = async (event) => {
     });
 
     await client.connect();
-
-    // Usar la base "miscelanea" (o cambia el nombre si la tuya es otra)
     const db = client.db("miscelanea");
-    const productosCollection = db.collection("productos");
 
-    // Obtener todos los productos activos
+    // 👇 aquí está el cambio importante
+    const productosCollection = db.collection("inventario");
+
     const productos = await productosCollection.find({ activo: true }).toArray();
 
-    // Convertir _id a id (string) y limpiar datos
     const productosFormateados = productos.map((p) => ({
       id: p._id.toString(),
       nombre: p.nombre,
@@ -59,8 +54,6 @@ exports.handler = async (event) => {
       body: JSON.stringify({ error: "Fallo al obtener el inventario." }),
     };
   } finally {
-    if (client) {
-      await client.close().catch(() => {});
-    }
+    if (client) await client.close().catch(() => {});
   }
 };
