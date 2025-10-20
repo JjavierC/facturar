@@ -1,9 +1,9 @@
-# netlify.toml
+
 [build]
   publish = "dist"
   command = "npm run build"
-  functions = "netlify/functions"
 
-# Configuramos Node.js para las funciones
+
 [functions]
+  directory = "netlify/functions"
   node_bundler = "esbuild"
