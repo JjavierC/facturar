@@ -57,3 +57,4 @@ exports.handler = async (event) => {
     if (client) await client.close().catch(() => {});
   }
 };
+  
