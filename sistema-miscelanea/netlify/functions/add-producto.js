@@ -1,75 +1,61 @@
 // netlify/functions/add-producto.js
+const { MongoClient } = require("mongodb");
+const MONGODB_URI = process.env.MONGODB_URI;
 
-const { MongoClient } = require('mongodb');
-
-// ¡IMPORTANTE! La variable MONGODB_URI se carga automáticamente desde el panel de Netlify.
-const MONGODB_URI = process.env.MONGODB_URI; 
-
-exports.handler = async (event, context) => {
-  // 1. Validar el método HTTP
+exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
-    return { 
-      statusCode: 405, 
-      body: JSON.stringify({ message: 'Método no permitido. Use POST.' })
-    };
+    return { statusCode: 405, body: JSON.stringify({ message: 'Método no permitido. Use POST.' }) };
   }
 
   let client;
-  let productoData;
-
   try {
-    // 2. Parsear el cuerpo de la solicitud (los datos del producto)
-    productoData = JSON.parse(event.body);
+    const productoData = JSON.parse(event.body || "{}");
 
-    // ********* Validaciones Básicas *********
-    if (!productoData.nombre || !productoData.precio || !productoData.stock) {
-        return {
-            statusCode: 400,
-            body: JSON.stringify({ message: "Faltan campos obligatorios: nombre, precio o stock." })
-        };
+    // Validaciones básicas
+    if (!productoData.nombre || productoData.precio == null || productoData.stock == null) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ message: "Faltan campos obligatorios: nombre, precio o stock." })
+      };
     }
 
-    // Asegurar que el precio y stock sean números
+    // Normalizar valores numéricos
     productoData.precio = Number(productoData.precio);
     productoData.stock = Number(productoData.stock);
+    productoData.costo = productoData.costo != null ? Number(productoData.costo) : 0; // <-- aceptar costo
 
-    // 3. Conectar a MongoDB Atlas
     client = new MongoClient(MONGODB_URI);
     await client.connect();
-    
-    // Cambia 'miscelanea' por el nombre real de tu base de datos
-    const db = client.db('miscelanea'); 
-    
-    // Cambia 'inventario' por el nombre real de tu colección
-    const productosCollection = db.collection('inventario'); 
 
-    // 4. Lógica: Insertar el nuevo producto en la colección
-    const result = await productosCollection.insertOne({
-        ...productoData,
-        fechaCreacion: new Date(),
-        activo: true // Para misceláneas, casi todo está activo
-    });
+    const db = client.db('miscelanea');
+    const productosCollection = db.collection('inventario');
 
-    // 5. Devolver la respuesta de éxito
+    const documento = {
+      nombre: productoData.nombre,
+      precio: productoData.precio,
+      costo: productoData.costo,
+      stock: productoData.stock,
+      descripcion: productoData.descripcion || "",
+      fechaCreacion: new Date(),
+      activo: productoData.activo ?? true,
+    };
+
+    const result = await productosCollection.insertOne(documento);
+
     return {
       statusCode: 201,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         message: "Producto agregado con éxito",
-        id: result.insertedId 
-      }),
+        id: result.insertedId
+      })
     };
-
   } catch (error) {
-    console.error('Error al procesar solicitud o conectar a DB:', error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: 'Fallo interno al agregar el producto.' }),
-    };
+    console.error('Error en add-producto:', error);
+    return { statusCode: 500, body: JSON.stringify({ error: 'Fallo interno al agregar el producto.' }) };
   } finally {
-    // 6. Cerrar la conexión
     if (client) {
-      await client.close();
+      try { await client.close(); } catch (_) {}
     }
   }
 };

@@ -4,7 +4,7 @@ const { MongoClient } = require("mongodb");
 const MONGODB_URI = process.env.MONGODB_URI;
 
 exports.handler = async (event) => {
-  if (event.httpMethod !== "GET") {
+  if (event && event.httpMethod && event.httpMethod !== "GET") {
     return { statusCode: 405, body: "Método no permitido" };
   }
 
@@ -16,27 +16,26 @@ exports.handler = async (event) => {
   }
 
   let client;
-
   try {
     client = new MongoClient(MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       serverSelectionTimeoutMS: 5000,
     });
-
     await client.connect();
-    const db = client.db("miscelanea");
 
-    // 👇 aquí está el cambio importante
+    const db = client.db("miscelanea");
     const productosCollection = db.collection("inventario");
 
+    // Devolver solo productos activos y mapear campos, incluyendo 'costo'
     const productos = await productosCollection.find({ activo: true }).toArray();
 
     const productosFormateados = productos.map((p) => ({
       id: p._id.toString(),
       nombre: p.nombre,
-      precio: p.precio,
-      stock: p.stock,
+      precio: Number(p.precio || 0),
+      costo: Number(p.costo || 0),        // <-- ahora incluimos costo
+      stock: Number(p.stock || 0),
       descripcion: p.descripcion || "",
       fechaCreacion: p.fechaCreacion || null,
       activo: p.activo ?? true,
@@ -48,13 +47,14 @@ exports.handler = async (event) => {
       body: JSON.stringify(productosFormateados),
     };
   } catch (error) {
-    console.error("❌ Error de MongoDB:", error.message);
+    console.error("❌ Error de MongoDB en get-productos:", error);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: "Fallo al obtener el inventario." }),
     };
   } finally {
-    if (client) await client.close().catch(() => {});
+    if (client) {
+      try { await client.close(); } catch (_) {}
+    }
   }
 };
-  
