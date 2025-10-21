@@ -6,7 +6,7 @@ exports.handler = async (event) => {
     return { statusCode: 405, body: "Método no permitido" };
   }
 
-  const client = new MongoClient(process.env.MONGO_URI);
+const client = new MongoClient(process.env.MONGODB_URI);
   try {
     const data = JSON.parse(event.body);
     const { items, subtotal, iva, total } = data;
