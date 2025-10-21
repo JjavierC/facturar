@@ -7,8 +7,8 @@ function Reportes() {
   const [fechaBusqueda, setFechaBusqueda] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [ventaSeleccionada, setVentaSeleccionada] = useState(null);
 
-  // --- Cargar ventas desde la función get-ventas ---
   useEffect(() => {
     axios.get("/.netlify/functions/get-ventas")
       .then((res) => {
@@ -22,104 +22,159 @@ function Reportes() {
       });
   }, []);
 
-  // --- Filtro por ID o fecha ---
   const reportesFiltrados = ventas.filter((v) => {
     const idMatch = idBusqueda
-      ? v._id.toString().toLowerCase().includes(idBusqueda.toLowerCase())
+      ? v._id.toLowerCase().includes(idBusqueda.toLowerCase())
       : true;
-
     const fechaMatch = fechaBusqueda
-      ? new Date(v.fecha_venta || v.fecha)
-          .toISOString()
-          .slice(0, 10) === fechaBusqueda
+      ? new Date(v.fecha_venta || v.fecha).toISOString().slice(0, 10) === fechaBusqueda
       : true;
-
     return idMatch && fechaMatch;
   });
 
-  if (loading) return <div className="text-center p-10">Cargando reportes...</div>;
+  const totalVentas = reportesFiltrados.length;
+  const sumaTotal = reportesFiltrados.reduce((sum, v) => sum + (v.total || 0), 0);
+  const totalGanancia = reportesFiltrados.reduce((sum, v) => sum + (v.total_ganancias || 0), 0);
+
+  if (loading) return <div className="text-center p-10 text-lg">Cargando reportes...</div>;
   if (error) return <div className="text-center p-10 text-red-500">{error}</div>;
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Barra de navegación */}
-      <nav className="bg-[#3A00FF] text-white px-6 py-4 flex justify-between items-center shadow-md">
-        <div className="font-bold text-lg tracking-wide">Cajero</div>
-      </nav>
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-cyan-100">
+      {/* Header */}
+      <header className="bg-white shadow-md px-8 py-5 flex justify-between items-center">
+        <h1 className="text-3xl font-bold text-gray-800 tracking-tight">
+          Reportes de Ventas
+        </h1>
+        <div className="text-sm text-gray-500">Miscelánea · Panel del Cajero</div>
+      </header>
 
-      {/* Contenedor principal */}
-      <main className="max-w-6xl mx-auto mt-10 bg-white shadow-lg rounded-2xl overflow-hidden">
-        {/* Encabezado */}
-        <div className="bg-cyan-400 text-white py-3 text-center font-semibold text-xl">
-          Reporte de Ventas
+      {/* Estadísticas */}
+      <section className="max-w-6xl mx-auto mt-10 grid grid-cols-1 sm:grid-cols-3 gap-6 px-6">
+        <div className="bg-white rounded-2xl p-6 shadow-md border-l-4 border-cyan-400">
+          <h3 className="text-gray-500 text-sm">Total Ventas</h3>
+          <p className="text-3xl font-bold text-gray-800 mt-1">{totalVentas}</p>
+        </div>
+        <div className="bg-white rounded-2xl p-6 shadow-md border-l-4 border-green-400">
+          <h3 className="text-gray-500 text-sm">Ingresos Totales</h3>
+          <p className="text-3xl font-bold text-green-600 mt-1">
+            ${sumaTotal.toLocaleString()}
+          </p>
+        </div>
+        <div className="bg-white rounded-2xl p-6 shadow-md border-l-4 border-yellow-400">
+          <h3 className="text-gray-500 text-sm">Ganancia Total</h3>
+          <p className="text-3xl font-bold text-yellow-600 mt-1">
+            ${totalGanancia.toLocaleString()}
+          </p>
+        </div>
+      </section>
+
+      {/* Filtros */}
+      <section className="max-w-6xl mx-auto mt-8 bg-white rounded-2xl shadow-md p-6 flex flex-wrap gap-4 justify-between">
+        <div className="flex items-center space-x-3 w-full sm:w-auto">
+          <label className="font-semibold text-gray-600 text-sm">Buscar por ID:</label>
+          <input
+            type="text"
+            value={idBusqueda}
+            onChange={(e) => setIdBusqueda(e.target.value)}
+            placeholder="Ej: 68f6dff7..."
+            className="border border-gray-300 rounded-lg px-3 py-2 w-56 focus:ring-2 focus:ring-cyan-400 outline-none"
+          />
         </div>
 
-        {/* Filtros */}
-        <div className="bg-cyan-200 flex flex-wrap justify-center gap-4 p-4">
-          <div className="flex items-center bg-white rounded-lg px-3 shadow-md">
-            <span className="mr-2 font-semibold text-sm">POR ID</span>
-            <input
-              type="text"
-              value={idBusqueda}
-              onChange={(e) => setIdBusqueda(e.target.value)}
-              placeholder="Buscar por ID"
-              className="border-none outline-none bg-transparent text-gray-700 placeholder-gray-400"
-            />
-          </div>
-
-          <div className="flex items-center bg-white rounded-lg px-3 shadow-md">
-            <span className="mr-2 font-semibold text-sm">POR FECHA</span>
-            <input
-              type="date"
-              value={fechaBusqueda}
-              onChange={(e) => setFechaBusqueda(e.target.value)}
-              className="border-none outline-none bg-transparent text-gray-700"
-            />
-          </div>
+        <div className="flex items-center space-x-3 w-full sm:w-auto">
+          <label className="font-semibold text-gray-600 text-sm">Filtrar por fecha:</label>
+          <input
+            type="date"
+            value={fechaBusqueda}
+            onChange={(e) => setFechaBusqueda(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-cyan-400 outline-none"
+          />
         </div>
+      </section>
 
-        {/* Tabla */}
-        <div className="overflow-x-auto p-4">
-          <table className="w-full text-center border border-gray-300">
-            <thead className="bg-gray-100 text-gray-800">
-              <tr>
-                <th className="border px-3 py-2">ID</th>
-                <th className="border px-3 py-2">FECHA VENTA</th>
-                <th className="border px-3 py-2">TOTAL</th>
-                <th className="border px-3 py-2">GANANCIA</th>
-                <th className="border px-3 py-2">PRODUCTOS</th>
-              </tr>
-            </thead>
-            <tbody>
-              {reportesFiltrados.length > 0 ? (
-                reportesFiltrados.map((v) => (
-                  <tr key={v._id} className="hover:bg-gray-50">
-                    <td className="border px-3 py-2 text-xs">{v._id}</td>
-                    <td className="border px-3 py-2">
-                      {new Date(v.fecha_venta || v.fecha).toLocaleString()}
-                    </td>
-                    <td className="border px-3 py-2 font-semibold">
-                      ${v.total?.toLocaleString() || 0}
-                    </td>
-                    <td className="border px-3 py-2 text-green-600 font-semibold">
-                      ${v.total_ganancias?.toLocaleString() || 0}
-                    </td>
-                    <td className="border px-3 py-2">
-                      {v.items?.map((i) => i.nombre).join(", ")}
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="5" className="py-4 text-gray-500">
-                    No se encontraron resultados.
+      {/* Tabla de Ventas */}
+      <section className="max-w-6xl mx-auto mt-10 bg-white rounded-2xl shadow-lg overflow-hidden">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-cyan-400 text-white">
+            <tr>
+              <th className="px-4 py-3 text-left text-sm font-semibold">ID</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Fecha</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Total</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Ganancia</th>
+              <th className="px-4 py-3 text-center text-sm font-semibold">Acción</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {reportesFiltrados.length > 0 ? (
+              reportesFiltrados.map((v) => (
+                <tr
+                  key={v._id}
+                  className="hover:bg-gray-50 transition"
+                >
+                  <td className="px-4 py-3 text-sm text-gray-700 truncate max-w-[140px]">
+                    {v._id}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-700">
+                    {new Date(v.fecha_venta || v.fecha).toLocaleString()}
+                  </td>
+                  <td className="px-4 py-3 text-sm font-semibold text-green-600">
+                    ${v.total?.toLocaleString() || 0}
+                  </td>
+                  <td className="px-4 py-3 text-sm font-semibold text-yellow-600">
+                    ${v.total_ganancias?.toLocaleString() || 0}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <button
+                      onClick={() => setVentaSeleccionada(v)}
+                      className="bg-cyan-500 hover:bg-cyan-600 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition"
+                    >
+                      Ver Detalle
+                    </button>
                   </td>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="5" className="py-6 text-center text-gray-500">
+                  No se encontraron resultados.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </section>
+
+      {/* Modal Detalle de Venta */}
+      {ventaSeleccionada && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 relative">
+            <h2 className="text-2xl font-bold mb-4 text-gray-800 border-b pb-2">
+              Detalle de Venta
+            </h2>
+            <div className="space-y-2 text-sm">
+              <p><strong>ID:</strong> {ventaSeleccionada._id}</p>
+              <p><strong>Fecha:</strong> {new Date(ventaSeleccionada.fecha_venta || ventaSeleccionada.fecha).toLocaleString()}</p>
+              <p><strong>Total:</strong> ${ventaSeleccionada.total.toLocaleString()}</p>
+              <p><strong>Ganancia:</strong> ${ventaSeleccionada.total_ganancias?.toLocaleString() || 0}</p>
+              <p><strong>Productos:</strong></p>
+              <ul className="list-disc pl-6 text-gray-700">
+                {ventaSeleccionada.items?.map((item, i) => (
+                  <li key={i}>
+                    {item.nombre} × {item.cantidad} — ${item.precio.toLocaleString()}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <button
+              onClick={() => setVentaSeleccionada(null)}
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-lg"
+            >
+              ✕
+            </button>
+          </div>
         </div>
-      </main>
+      )}
     </div>
   );
 }
