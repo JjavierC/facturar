@@ -1,35 +1,57 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 
 function Reportes() {
+  const [ventas, setVentas] = useState([]);
   const [idBusqueda, setIdBusqueda] = useState("");
   const [fechaBusqueda, setFechaBusqueda] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const reportes = [
+  // --- Cargar ventas desde la función get-ventas ---
+  useEffect(() => {
+    axios.get("/.netlify/functions/get-ventas")
+      .then((res) => {
+        setVentas(res.data.ventas || []);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error al cargar reportes:", err);
+        setError("Error al cargar reportes. Verifique conexión.");
+        setLoading(false);
+      });
+  }, []);
 
-  ];
+  // --- Filtro por ID o fecha ---
+  const reportesFiltrados = ventas.filter((v) => {
+    const idMatch = idBusqueda
+      ? v._id.toString().toLowerCase().includes(idBusqueda.toLowerCase())
+      : true;
 
-  // Filtro por ID o fecha
-  const reportesFiltrados = reportes.filter(
-    (r) =>
-      (idBusqueda ? r.id.toString().includes(idBusqueda) : true) &&
-      (fechaBusqueda ? r.fecha_venta === fechaBusqueda : true)
-  );
+    const fechaMatch = fechaBusqueda
+      ? new Date(v.fecha_venta || v.fecha)
+          .toISOString()
+          .slice(0, 10) === fechaBusqueda
+      : true;
+
+    return idMatch && fechaMatch;
+  });
+
+  if (loading) return <div className="text-center p-10">Cargando reportes...</div>;
+  if (error) return <div className="text-center p-10 text-red-500">{error}</div>;
 
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Barra de navegación */}
       <nav className="bg-[#3A00FF] text-white px-6 py-4 flex justify-between items-center shadow-md">
         <div className="font-bold text-lg tracking-wide">Cajero</div>
-        <ul className="flex space-x-6 text-sm font-medium">
- 
-        </ul>
       </nav>
 
       {/* Contenedor principal */}
       <main className="max-w-6xl mx-auto mt-10 bg-white shadow-lg rounded-2xl overflow-hidden">
         {/* Encabezado */}
         <div className="bg-cyan-400 text-white py-3 text-center font-semibold text-xl">
-          facturas
+          Reporte de Ventas
         </div>
 
         {/* Filtros */}
@@ -40,7 +62,7 @@ function Reportes() {
               type="text"
               value={idBusqueda}
               onChange={(e) => setIdBusqueda(e.target.value)}
-              placeholder="id"
+              placeholder="Buscar por ID"
               className="border-none outline-none bg-transparent text-gray-700 placeholder-gray-400"
             />
           </div>
@@ -62,28 +84,34 @@ function Reportes() {
             <thead className="bg-gray-100 text-gray-800">
               <tr>
                 <th className="border px-3 py-2">ID</th>
-                <th className="border px-3 py-2">ID_CLIENTE</th>
-                <th className="border px-3 py-2">CLIENTE</th>
-                <th className="border px-3 py-2">FECHA_VENTA</th>
+                <th className="border px-3 py-2">FECHA VENTA</th>
                 <th className="border px-3 py-2">TOTAL</th>
-                <th className="border px-3 py-2">TOTAL_GANANCIAS</th>
+                <th className="border px-3 py-2">GANANCIA</th>
+                <th className="border px-3 py-2">PRODUCTOS</th>
               </tr>
             </thead>
             <tbody>
               {reportesFiltrados.length > 0 ? (
-                reportesFiltrados.map((r) => (
-                  <tr key={r.id} className="hover:bg-gray-50">
-                    <td className="border px-3 py-2">{r.id}</td>
-                    <td className="border px-3 py-2">{r.id_cliente}</td>
-                    <td className="border px-3 py-2 capitalize">{r.cliente}</td>
-                    <td className="border px-3 py-2">{r.fecha_venta}</td>
-                    <td className="border px-3 py-2">${r.total.toLocaleString()}</td>
-                    <td className="border px-3 py-2">${r.ganancia.toLocaleString()}</td>
+                reportesFiltrados.map((v) => (
+                  <tr key={v._id} className="hover:bg-gray-50">
+                    <td className="border px-3 py-2 text-xs">{v._id}</td>
+                    <td className="border px-3 py-2">
+                      {new Date(v.fecha_venta || v.fecha).toLocaleString()}
+                    </td>
+                    <td className="border px-3 py-2 font-semibold">
+                      ${v.total?.toLocaleString() || 0}
+                    </td>
+                    <td className="border px-3 py-2 text-green-600 font-semibold">
+                      ${v.total_ganancias?.toLocaleString() || 0}
+                    </td>
+                    <td className="border px-3 py-2">
+                      {v.items?.map((i) => i.nombre).join(", ")}
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="py-4 text-gray-500">
+                  <td colSpan="5" className="py-4 text-gray-500">
                     No se encontraron resultados.
                   </td>
                 </tr>
