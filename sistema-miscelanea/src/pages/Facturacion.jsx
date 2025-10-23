@@ -226,8 +226,8 @@ function Facturacion() {
           </button>
         </div>
 
-        {/* --- INICIO DE LA CORRECCIÓN DE BÚSQUEDA "FEA" --- */}
-        {/* La lista ahora se alinea con los bordes 'p-6' del contenedor padre */}
+        {/* --- CORRECCIÓN DE BÚSQUEDA "FEA" --- */}
+        {/* La lista ahora se alinea con los bordes 'p-6' (left-6 right-6) */}
         {sugerencias.length > 0 && busqueda.length > 1 && (
           <ul className="absolute z-10 bg-white border border-gray-300 rounded-md mt-1 max-h-60 overflow-y-auto shadow-lg left-6 right-6">
             {sugerencias.map((prod) => (
@@ -241,7 +241,7 @@ function Facturacion() {
             ))}
           </ul>
         )}
-        {/* --- FIN DE LA CORRECCIÓN DE BÚSQUEDA "FEA" --- */}
+        {/* --- FIN DE LA CORRECCIÓN --- */}
 
 
         {mensaje && (
@@ -258,6 +258,8 @@ function Facturacion() {
         <h2 className="text-2xl font-semibold text-gray-700 mb-4">Resumen de la Venta</h2>
         <TablaVenta items={itemsVenta} actualizarItem={actualizarItemEnCarrito} />
 
+        {/* --- CORRECCIÓN DE DISEÑO DE TOTALES --- */}
+        {/* Este es el recuadro blanco que no te aparece en la captura */}
         <div className="bg-white p-6 rounded-lg shadow-xl mt-4">
           <div className="flex justify-between text-lg mb-2">
             <span>Subtotal:</span>
@@ -272,6 +274,8 @@ function Facturacion() {
             <span>${total.toLocaleString('es-CO')}</span>
           </div>
         </div>
+        {/* --- FIN DE LA CORRECCIÓN --- */}
+
 
         <button
           onClick={procesarVenta}
@@ -282,20 +286,17 @@ function Facturacion() {
         </button>
       </section>
 
-      {/* --- INICIO DE LA CORRECCIÓN DE IMPRESIÓN --- */}
-      {/* Esto ahora es un MODAL que usa la clase "print-modal-wrapper" */}
-      {/* NO es un <div> al final de la página */}
+      {/* --- CORRECCIÓN DE IMPRESIÓN --- */}
+      {/* Esto SÓLO aparece cuando 'ventaExitosa' tiene datos */}
+      {/* Y es un MODAL, no parte de la página */}
       {ventaExitosa && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4 print-modal-wrapper">
           <div className="bg-white rounded-lg shadow-2xl p-6 md:p-8 max-w-3xl w-full max-h-[90vh] overflow-y-auto relative">
             
-            {/* Ocultamos este título al imprimir */}
             <h2 className="text-2xl font-bold text-gray-800 mb-4 modal-buttons">Factura Generada</h2>
             
-            {/* Este componente SÍ se imprime */}
             <FacturaImprimible venta={ventaExitosa} ivaPorcentaje={ivaPorcentaje} />
             
-            {/* Ocultamos los botones al imprimir */}
             <div className="flex justify-end gap-4 mt-6 modal-buttons">
               <button
                 onClick={() => setVentaExitosa(null)}
@@ -313,6 +314,7 @@ function Facturacion() {
           </div>
         </div>
       )}
+      {/* --- FIN DE LA CORRECCIÓN --- */}
     </div>
   );
 }
