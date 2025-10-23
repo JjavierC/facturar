@@ -3,3 +3,17 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+/* Importa la fuente "Inter" que usa tu diseño de Figma */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
+/* Estilo global para la página y la tabla. 
+  Esto es necesario porque la tabla de Figma no tiene espacios entre bordes.
+*/
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #f0f2f5; /* Un fondo para que resalte el contenedor blanco */
+}
+
+.tabla-figma {
+  border-collapse: collapse; /* Une los bordes de la tabla */
+}

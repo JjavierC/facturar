@@ -1,50 +1,71 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
-// NOTA: Reemplaza 'URL_DE_TU_LOGO.png' con la ruta real a tu imagen de logo.
-const LOGO_URL = null; // o 'URL_DE_TU_LOGO.png'
+// DEBES REEMPLAZAR ESTO con la ruta a tu logo.
+// El diseño de Figma usa un logo de 120x68px.
+const LOGO_URL = '/logo.png'; // Ejemplo: '/img/mi-logo.png'
 
 function Navbar() {
+  const location = useLocation();
+
+  // Función para ver si la ruta está activa
+  const isActive = (path) => location.pathname.includes(path);
+
   return (
     <nav
-      className="w-full h-[96px] bg-[#350BF3] text-white flex items-center justify-between px-14 border-b border-black"
+      className="w-full h-[96px] bg-[#350BF3] text-white flex items-center px-14 border-b border-black"
       // La fuente 'Inter' debe estar importada en tu index.css
       style={{ fontFamily: 'Inter, sans-serif' }}
     >
-      {/* Logo (según especificación de Figma) */}
+      {/* Logo */}
       <Link to="/">
         <div
-          className="w-[120px] h-[68px] rounded-[20px] border border-black bg-cover bg-center bg-white/20 flex items-center justify-center"
-          style={{ backgroundImage: LOGO_URL ? `url(${LOGO_URL})` : 'none' }}
+          className="w-[120px] h-[68px] rounded-[20px] border border-black bg-cover bg-center"
+          // Si no tienes logo, usa un color de fondo temporal
+          style={{ 
+            backgroundImage: `url(${LOGO_URL})`,
+            backgroundColor: !LOGO_URL ? '#ffffff30' : 'transparent'
+          }}
         >
-          {/* Placeholder si no hay logo */}
+          {/* Si no hay logo, muestra un texto placeholder */}
           {!LOGO_URL && (
-            <span className="font-bold text-lg">LOGO</span>
+            <div className="w-full h-full flex items-center justify-center text-lg font-bold">
+              LOGO
+            </div>
           )}
         </div>
       </Link>
 
-      {/* Enlaces de Navegación (funcionales, con estilo de Figma) */}
-      {/* Usamos tus enlaces existentes para no dañar la funcionalidad */}
-      <div className="flex space-x-10">
-        <Link
-          to="/"
-          // Estilo de Figma: 32px, blanco, normal
-          className="text-white hover:text-gray-300 text-3xl font-normal transition-colors"
+      {/* Enlaces de Navegación (Alineados a la derecha, idénticos a Figma) */}
+      <div className="flex items-center gap-10 ml-auto text-[32px] font-normal">
+        <Link 
+          to="/inicio" 
+          className={isActive('/inicio') ? "text-cyan-300 font-bold" : "hover:text-gray-300"}
         >
-          Facturación
+          inicio
         </Link>
-        <Link
-          to="/inventario"
-          className="text-white hover:text-gray-300 text-3xl font-normal transition-colors"
+        <Link 
+          to="/clientes" 
+          className={isActive('/clientes') ? "text-cyan-300 font-bold" : "hover:text-gray-300"}
         >
-          Inventario
+          clientes
         </Link>
-        <Link
-          to="/reportes"
-          // Resaltamos el enlace de la página actual, como en el ejemplo
-          className="text-cyan-300 font-bold text-3xl transition-colors"
+        <Link 
+          to="/productos" 
+          className={isActive('/productos') ? "text-cyan-300 font-bold" : "hover:text-gray-300"}
         >
-          Reportes
+          productos
+        </Link>
+        <Link 
+          to="/ventas" 
+          className={isActive('/ventas') || isActive('/reportes') ? "text-cyan-300 font-bold" : "hover:text-gray-300"}
+        >
+          ventas
+        </Link>
+        <Link 
+          to="/facturas" 
+          className={isActive('/facturas') ? "text-cyan-300 font-bold" : "hover:text-gray-300"}
+        >
+          facturas
         </Link>
       </div>
     </nav>
