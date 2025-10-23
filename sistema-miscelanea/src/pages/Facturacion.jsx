@@ -16,7 +16,7 @@ function Facturacion() {
 
   const busquedaRef = useRef(null);
 
-  // 1. ⚙️ Cargar inventario (Esta lógica ya estaba bien)
+  // 1. ⚙️ Cargar inventario
   useEffect(() => {
     const cargarInventario = async () => {
       try {
@@ -30,15 +30,15 @@ function Facturacion() {
     cargarInventario();
   }, [ventaExitosa]); // RECARGA inventario después de una venta exitosa
 
-  // 2. 🔍 Lógica de búsqueda (YA ESTABA BIEN, pero ahora funciona gracias al fix de get-productos.js)
+  // 2. 🔍 Lógica de búsqueda
   const handleBusquedaChange = useCallback((e) => {
     const valor = e.target.value;
     setBusqueda(valor);
 
-    if (valor.length > 1) { // Reducido a 2 caracteres para mejor UX
+    if (valor.length > 1) { 
       const filtered = productosInventario.filter(prod =>
         prod.nombre.toLowerCase().includes(valor.toLowerCase()) ||
-        prod._id.toLowerCase().includes(valor.toLowerCase()) // Ahora sí funciona
+        prod._id.toLowerCase().includes(valor.toLowerCase()) 
       );
       setSugerencias(filtered);
     } else {
@@ -46,7 +46,7 @@ function Facturacion() {
     }
   }, [productosInventario]);
 
-  // 3. ➕ Agregar al carrito (Lógica ya estaba bien, ahora funciona gracias a get-productos.js)
+  // 3. ➕ Agregar al carrito
   const agregarProductoAlCarrito = useCallback((producto) => {
     setMensaje(null);
     setBusqueda('');
@@ -96,7 +96,7 @@ function Facturacion() {
     }
   }, [productosInventario]);
 
-  // 4. Actualizar cantidad (Lógica ya estaba bien)
+  // 4. Actualizar cantidad
   const actualizarItemEnCarrito = useCallback((idProducto, nuevaCantidad) => {
     setMensaje(null);
 
@@ -108,7 +108,6 @@ function Facturacion() {
         return prevItems.filter(item => item._id !== idProducto);
       } else if (nuevaCantidad > productoInventario.stock) {
         setMensaje({ type: 'error', text: `No hay suficiente stock de "${productoInventario.nombre}". Stock actual: ${productoInventario.stock}` });
-        // Devolvemos la cantidad máxima posible
          return prevItems.map(item =>
           item._id === idProducto ? { ...item, cantidad: productoInventario.stock } : item
         );
@@ -120,12 +119,12 @@ function Facturacion() {
     });
   }, [productosInventario]);
 
-  // 5. 💰 Cálculos (Lógica ya estaba bien)
+  // 5. 💰 Cálculos
   const subtotal = itemsVenta.reduce((sum, item) => sum + item.precio * item.cantidad, 0);
   const ivaCalculado = subtotal * (ivaPorcentaje / 100);
   const total = subtotal + ivaCalculado;
   
-  // 6. ✅ Procesar Venta (Lógica ya estaba bien, solo ajusté el guardado de ventaExitosa)
+  // 6. ✅ Procesar Venta
   const procesarVenta = async () => {
     if (itemsVenta.length === 0) {
       setMensaje({ type: 'error', text: 'El carrito está vacío.' });
@@ -141,7 +140,7 @@ function Facturacion() {
       const ventaData = {
         fecha_venta: new Date().toISOString(),
         items: itemsVenta.map(item => ({
-          producto_id: item._id, // Aseguramos que se envía _id
+          producto_id: item._id, 
           nombre: item.nombre,
           precio: item.precio,
           costo: item.costo,
@@ -157,16 +156,13 @@ function Facturacion() {
       
       setMensaje({ type: 'success', text: `¡Venta registrada! ID: ${res.data.ventaId}` });
       
-      // Guardamos la data completa para la factura (incluyendo la fecha que generamos)
       setVentaExitosa({
           ...ventaData,
-          _id: res.data.ventaId // Añadimos el ID devuelto
+          _id: res.data.ventaId 
       }); 
       
       setItemsVenta([]); // Limpiar carrito
       
-      // No necesitamos recargar el inventario aquí, el useEffect [ventaExitosa] lo hará.
-
     } catch (err) {
       console.error('Error al procesar la venta:', err.response ? err.response.data : err.message);
       setMensaje({ type: 'error', text: `Error al registrar venta: ${err.response?.data?.error || err.message}` });
@@ -175,10 +171,10 @@ function Facturacion() {
     }
   };
   
-  // 7. 🖨️ Función para imprimir (SIMPLIFICADA)
+  // 7. 🖨️ Función para imprimir
   const handleImprimirFactura = () => {
-    window.print(); // Los estilos CSS de @media print se encargarán de todo
-    setVentaExitosa(null); // Cierra la vista previa después de imprimir
+    window.print(); 
+    setVentaExitosa(null); 
   };
 
   return (
@@ -204,7 +200,7 @@ function Facturacion() {
                     if (productoExacto) {
                         agregarProductoAlCarrito(productoExacto);
                     } else if (sugerencias.length > 0) {
-                        agregarProductoAlCarrito(sugerencias[0]); // Agrega la primera sugerencia
+                        agregarProductoAlCarrito(sugerencias[0]); 
                     } else {
                         setMensaje({ type: 'error', text: `Producto no encontrado.` });
                     }
@@ -218,7 +214,7 @@ function Facturacion() {
                 if (productoExacto) {
                     agregarProductoAlCarrito(productoExacto);
                 } else if (sugerencias.length > 0) {
-                   agregarProductoAlCarrito(sugerencias[0]); // Agrega la primera sugerencia si no hay match exacto
+                   agregarProductoAlCarrito(sugerencias[0]);
                 } else {
                     setMensaje({ type: 'error', text: `Producto no encontrado.` });
                 }
@@ -230,9 +226,10 @@ function Facturacion() {
           </button>
         </div>
 
-        {/* Sugerencias de búsqueda (Ahora 100% funcional) */}
+        {/* --- INICIO DE LA CORRECCIÓN DE BÚSQUEDA "FEA" --- */}
+        {/* La lista ahora se alinea con los bordes 'p-6' del contenedor padre */}
         {sugerencias.length > 0 && busqueda.length > 1 && (
-          <ul className="absolute z-10 bg-white border border-gray-300 rounded-md mt-1 w-[calc(100%-3rem)] max-h-60 overflow-y-auto shadow-lg">
+          <ul className="absolute z-10 bg-white border border-gray-300 rounded-md mt-1 max-h-60 overflow-y-auto shadow-lg left-6 right-6">
             {sugerencias.map((prod) => (
               <li
                 key={prod._id}
@@ -244,6 +241,8 @@ function Facturacion() {
             ))}
           </ul>
         )}
+        {/* --- FIN DE LA CORRECCIÓN DE BÚSQUEDA "FEA" --- */}
+
 
         {mensaje && (
           <div 
@@ -283,14 +282,20 @@ function Facturacion() {
         </button>
       </section>
 
-      {/* Vista previa de factura (MODIFICADO PARA IMPRESIÓN) */}
+      {/* --- INICIO DE LA CORRECCIÓN DE IMPRESIÓN --- */}
+      {/* Esto ahora es un MODAL que usa la clase "print-modal-wrapper" */}
+      {/* NO es un <div> al final de la página */}
       {ventaExitosa && (
-        // Agregamos la clase "print-modal-wrapper"
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4 print-modal-wrapper">
           <div className="bg-white rounded-lg shadow-2xl p-6 md:p-8 max-w-3xl w-full max-h-[90vh] overflow-y-auto relative">
+            
+            {/* Ocultamos este título al imprimir */}
             <h2 className="text-2xl font-bold text-gray-800 mb-4 modal-buttons">Factura Generada</h2>
+            
+            {/* Este componente SÍ se imprime */}
             <FacturaImprimible venta={ventaExitosa} ivaPorcentaje={ivaPorcentaje} />
-            {/* Agregamos la clase "modal-buttons" para ocultarlos al imprimir */}
+            
+            {/* Ocultamos los botones al imprimir */}
             <div className="flex justify-end gap-4 mt-6 modal-buttons">
               <button
                 onClick={() => setVentaExitosa(null)}
