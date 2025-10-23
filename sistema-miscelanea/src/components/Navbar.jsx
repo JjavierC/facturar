@@ -1,38 +1,50 @@
 import { Link } from 'react-router-dom';
 
+const LOGO_URL = 
+
 function Navbar() {
   return (
-    <nav className="bg-white shadow-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          
-          {/* Logo / Título */}
-          <Link to="/" className="text-xl font-bold text-indigo-600">
-            Miscelánea POS
-          </Link>
-
-          {/* Enlaces de Navegación */}
-          <div className="flex space-x-4">
-            <Link 
-              to="/" 
-              className="text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md font-medium"
-            >
-              Facturación
-            </Link>
-            <Link 
-              to="/inventario" 
-              className="text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md font-medium"
-            >
-              Inventario
-            </Link>
-            <Link 
-              to="/reportes" 
-              className="text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md font-medium"
-            >
-              Reportes
-            </Link>
-          </div>
+    <nav
+      className="w-full h-[96px] bg-[#350BF3] text-white flex items-center justify-between px-14 border-b border-black"
+      // La fuente 'Inter' debe estar importada en tu index.css
+      style={{ fontFamily: 'Inter, sans-serif' }}
+    >
+      {/* Logo (según especificación de Figma) */}
+      <Link to="/">
+        <div
+          className="w-[120px] h-[68px] rounded-[20px] border border-black bg-cover bg-center bg-white/20 flex items-center justify-center"
+          style={{ backgroundImage: LOGO_URL ? `url(${LOGO_URL})` : 'none' }}
+        >
+          {/* Placeholder si no hay logo */}
+          {!LOGO_URL && (
+            <span className="font-bold text-lg">LOGO</span>
+          )}
         </div>
+      </Link>
+
+      {/* Enlaces de Navegación (funcionales, con estilo de Figma) */}
+      {/* Usamos tus enlaces existentes para no dañar la funcionalidad */}
+      <div className="flex space-x-10">
+        <Link
+          to="/"
+          // Estilo de Figma: 32px, blanco, normal
+          className="text-white hover:text-gray-300 text-3xl font-normal transition-colors"
+        >
+          Facturación
+        </Link>
+        <Link
+          to="/inventario"
+          className="text-white hover:text-gray-300 text-3xl font-normal transition-colors"
+        >
+          Inventario
+        </Link>
+        <Link
+          to="/reportes"
+          // Resaltamos el enlace de la página actual, como en el ejemplo
+          className="text-cyan-300 font-bold text-3xl transition-colors"
+        >
+          Reportes
+        </Link>
       </div>
     </nav>
   );
