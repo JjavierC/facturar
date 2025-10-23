@@ -1,17 +1,18 @@
+// src/components/FormularioProducto.jsx
 import React, { useState } from 'react';
-import axios from 'axios'; // Usaremos axios porque lo instalaste y es más limpio que fetch
+import axios from 'axios';
 
 function FormularioProducto({ onProductAdded }) {
   const [formData, setFormData] = useState({
     nombre: '',
     precio: '',
+    costo: '', // <-- CAMBIO: Campo de costo añadido
     stock: '',
-    descripcion: '' // Campo opcional
+    descripcion: ''
   });
   const [mensaje, setMensaje] = useState(null);
   const [cargando, setCargando] = useState(false);
 
-  // Maneja el cambio de los inputs del formulario
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prevState => ({
@@ -20,62 +21,56 @@ function FormularioProducto({ onProductAdded }) {
     }));
   };
 
-  // Maneja el envío del formulario a la Netlify Function
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMensaje(null);
     setCargando(true);
 
-    // Validación básica
-    if (!formData.nombre || !formData.precio || !formData.stock) {
-      setMensaje({ type: 'error', text: '¡Error! Por favor, rellena todos los campos obligatorios.' });
+    if (!formData.nombre || !formData.precio || !formData.stock || !formData.costo) { // <-- CAMBIO: Costo es obligatorio
+      setMensaje({ type: 'error', text: '¡Error! Rellena todos los campos (Nombre, Precio, Costo, Stock).' });
       setCargando(false);
       return;
     }
 
     try {
-      // 1. Envía los datos a la Netlify Function que creamos
       const response = await axios.post('/.netlify/functions/add-producto', {
         ...formData,
-        // Asegurar que los números se envíen como números
         precio: parseFloat(formData.precio),
+        costo: parseFloat(formData.costo), // <-- CAMBIO: Enviar costo como número
         stock: parseInt(formData.stock, 10),
       });
 
-      // 2. Maneja el éxito
       setMensaje({ type: 'success', text: `¡Producto "${formData.nombre}" agregado con éxito!` });
       
-      // 3. Limpia el formulario
       setFormData({
         nombre: '',
         precio: '',
+        costo: '', // <-- CAMBIO: Limpiar costo
         stock: '',
         descripcion: ''
       });
 
-      // 4. Notifica al componente padre (Inventario.jsx) para recargar la lista
       if (onProductAdded) {
         onProductAdded(); 
       }
 
     } catch (error) {
-      // 5. Maneja el error de la API
       console.error('Error al agregar producto:', error.response ? error.response.data : error.message);
-      setMensaje({ type: 'error', text: 'Fallo al conectar con la base de datos o error interno. Revisa la consola.' });
+      setMensaje({ type: 'error', text: 'Fallo al conectar con la base de datos.' });
     } finally {
       setCargando(false);
     }
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-xl mb-8">
+    <div className="bg-white p-6 rounded-lg shadow-xl mb-8 max-w-4xl mx-auto">
       <h2 className="text-2xl font-semibold text-gray-700 mb-4">Añadir Nuevo Producto</h2>
       
       <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           
           {/* Nombre del Producto */}
-          <div>
+          <div className="md:col-span-3">
             <label htmlFor="nombre" className="block text-sm font-medium text-gray-700">Nombre del Producto (*)</label>
             <input
               type="text"
@@ -88,7 +83,7 @@ function FormularioProducto({ onProductAdded }) {
             />
           </div>
 
-          {/* Precio */}
+          {/* Precio de Venta */}
           <div>
             <label htmlFor="precio" className="block text-sm font-medium text-gray-700">Precio de Venta ($) (*)</label>
             <input
@@ -97,14 +92,31 @@ function FormularioProducto({ onProductAdded }) {
               id="precio"
               value={formData.precio}
               onChange={handleChange}
-              step="0.01" // Permite decimales
+              step="0.01"
+              min="0"
+              required
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:border-indigo-500 focus:ring-indigo-500"
+            />
+          </div>
+
+          {/* Costo del Producto (NUEVO) */}
+          <div>
+            <label htmlFor="costo" className="block text-sm font-medium text-gray-700">Costo ($) (*)</label>
+            <input
+              type="number"
+              name="costo"
+              id="costo"
+              value={formData.costo}
+              onChange={handleChange}
+              step="0.01"
+              min="0"
               required
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:border-indigo-500 focus:ring-indigo-500"
             />
           </div>
 
           {/* Stock */}
-          <div className="md:col-span-1">
+          <div>
             <label htmlFor="stock" className="block text-sm font-medium text-gray-700">Cantidad en Stock (*)</label>
             <input
               type="number"
@@ -112,13 +124,14 @@ function FormularioProducto({ onProductAdded }) {
               id="stock"
               value={formData.stock}
               onChange={handleChange}
+              min="0"
               required
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:border-indigo-500 focus:ring-indigo-500"
             />
           </div>
 
           {/* Descripción */}
-          <div className="md:col-span-2">
+          <div className="md:col-span-3">
             <label htmlFor="descripcion" className="block text-sm font-medium text-gray-700">Descripción (Opcional)</label>
             <textarea
               name="descripcion"
@@ -131,7 +144,6 @@ function FormularioProducto({ onProductAdded }) {
           </div>
         </div>
 
-        {/* Mensajes de feedback */}
         {mensaje && (
           <div 
             className={`mt-4 p-3 rounded-md ${mensaje.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
@@ -140,7 +152,6 @@ function FormularioProducto({ onProductAdded }) {
           </div>
         )}
 
-        {/* Botón de Enviar */}
         <div className="mt-6">
           <button
             type="submit"

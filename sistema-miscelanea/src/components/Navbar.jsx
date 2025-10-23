@@ -1,71 +1,58 @@
+// src/components/Navbar.jsx
 import { Link, useLocation } from 'react-router-dom';
 
 // DEBES REEMPLAZAR ESTO con la ruta a tu logo.
-// El diseño de Figma usa un logo de 120x68px.
-const LOGO_URL = '/logo.png'; // Ejemplo: '/img/mi-logo.png'
+const LOGO_URL = null; // Ejemplo: '/logo-real.png'
 
 function Navbar() {
   const location = useLocation();
 
   // Función para ver si la ruta está activa
-  const isActive = (path) => location.pathname.includes(path);
+  const isActive = (path) => location.pathname === path;
 
   return (
     <nav
-      className="w-full h-[96px] bg-[#350BF3] text-white flex items-center px-14 border-b border-black"
+      className="w-full h-[96px] bg-[#350BF3] text-white flex items-center px-4 md:px-14 border-b border-black print:hidden" // Ocultar al imprimir
       // La fuente 'Inter' debe estar importada en tu index.css
       style={{ fontFamily: 'Inter, sans-serif' }}
     >
       {/* Logo */}
       <Link to="/">
         <div
-          className="w-[120px] h-[68px] rounded-[20px] border border-black bg-cover bg-center"
-          // Si no tienes logo, usa un color de fondo temporal
+          className="w-[100px] h-[68px] md:w-[120px] rounded-[20px] border border-black bg-cover bg-center"
           style={{ 
             backgroundImage: `url(${LOGO_URL})`,
             backgroundColor: !LOGO_URL ? '#ffffff30' : 'transparent'
           }}
         >
-          {/* Si no hay logo, muestra un texto placeholder */}
           {!LOGO_URL && (
-            <div className="w-full h-full flex items-center justify-center text-lg font-bold">
+            <div className="w-full h-full flex items-center justify-center text-sm md:text-lg font-bold">
               LOGO
             </div>
           )}
         </div>
       </Link>
 
-      {/* Enlaces de Navegación (Alineados a la derecha, idénticos a Figma) */}
-      <div className="flex items-center gap-10 ml-auto text-[32px] font-normal">
+      {/* Enlaces de Navegación (Tus páginas reales) */}
+      <div className="flex items-center gap-4 md:gap-10 ml-auto text-xl md:text-[32px] font-normal">
         <Link 
-          to="/inicio" 
-          className={isActive('/inicio') ? "text-cyan-300 font-bold" : "hover:text-gray-300"}
+          to="/" 
+          // Resalta si la ruta es exacta
+          className={isActive('/') ? "text-cyan-300 font-bold" : "hover:text-gray-300"}
         >
-          inicio
+          Facturación
         </Link>
         <Link 
-          to="/clientes" 
-          className={isActive('/clientes') ? "text-cyan-300 font-bold" : "hover:text-gray-300"}
+          to="/inventario" 
+          className={isActive('/inventario') ? "text-cyan-300 font-bold" : "hover:text-gray-300"}
         >
-          clientes
+          Inventario
         </Link>
         <Link 
-          to="/productos" 
-          className={isActive('/productos') ? "text-cyan-300 font-bold" : "hover:text-gray-300"}
+          to="/reportes" 
+          className={isActive('/reportes') ? "text-cyan-300 font-bold" : "hover:text-gray-300"}
         >
-          productos
-        </Link>
-        <Link 
-          to="/ventas" 
-          className={isActive('/ventas') || isActive('/reportes') ? "text-cyan-300 font-bold" : "hover:text-gray-300"}
-        >
-          ventas
-        </Link>
-        <Link 
-          to="/facturas" 
-          className={isActive('/facturas') ? "text-cyan-300 font-bold" : "hover:text-gray-300"}
-        >
-          facturas
+          Reportes
         </Link>
       </div>
     </nav>
