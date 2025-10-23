@@ -1,23 +1,19 @@
 // src/components/TablaVenta.jsx
 import React from 'react';
 
-// Este componente ahora es "tonto".
-// Solo recibe los items y la función para actualizarlos.
-// NO maneja el envío de la venta.
+
 function TablaVenta({ items, actualizarItem }) {
   
-  // Si no hay productos, mostrar mensaje
   if (items.length === 0) {
     return (
       <div className="text-center p-10 bg-white rounded-lg shadow-md">
-        <p className="text-gray-500">
-          Agrega productos escaneando o buscando por nombre.
+        <p className="text-gray-500 text-lg">
+          Agrega productos escaneando el código de barras o buscándolos por nombre.
         </p>
       </div>
     );
   }
 
-  // 🧾 Tabla de productos
   return (
     <div className="bg-white p-6 rounded-lg shadow-xl overflow-x-auto">
       <table className="min-w-full divide-y divide-gray-200">
@@ -27,7 +23,7 @@ function TablaVenta({ items, actualizarItem }) {
               Producto
             </th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Stock
+              Stock Disp.
             </th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Precio Unit.
@@ -38,17 +34,17 @@ function TablaVenta({ items, actualizarItem }) {
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Total
             </th>
-            <th className="px-4 py-3"></th> {/* Columna para el botón de eliminar */}
+            <th className="px-4 py-3"></th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {items.map((item) => (
-            <tr key={item.id || item._id}>
+            <tr key={item._id}>
               <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                 {item.nombre}
               </td>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                {item.stock} {/* Mostramos el stock disponible */}
+                {item.stock} {/* Muestra el stock disponible */}
               </td>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                 ${item.precio.toLocaleString()}
@@ -58,7 +54,6 @@ function TablaVenta({ items, actualizarItem }) {
                   type="number"
                   value={item.cantidad}
                   onChange={(e) =>
-                    // Llama a la función del padre para actualizar
                     actualizarItem(item._id, parseInt(e.target.value) || 0)
                   }
                   min="1"
@@ -71,10 +66,9 @@ function TablaVenta({ items, actualizarItem }) {
               </td>
               <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                 <button
-                  // Llama a la función del padre para eliminar (enviando 0)
-                  onClick={() => actualizarItem(item._id, 0)}
+                  onClick={() => actualizarItem(item._id, 0)} // Eliminar enviando 0
                   className="text-red-600 hover:text-red-900"
-                  title="Eliminar"
+                  title="Eliminar producto"
                 >
                   X
                 </button>
@@ -83,11 +77,6 @@ function TablaVenta({ items, actualizarItem }) {
           ))}
         </tbody>
       </table>
-
-      {/* EL BOTÓN DE REGISTRAR VENTA FUE ELIMINADO.
-        Esa lógica pertenece a Facturacion.jsx, donde ya existe 
-        y funciona correctamente (botón "Procesar Venta y Facturar").
-      */}
     </div>
   );
 }

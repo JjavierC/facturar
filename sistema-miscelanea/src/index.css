@@ -17,3 +17,50 @@ body {
 .tabla-figma {
   border-collapse: collapse; /* Une los bordes de la tabla */
 }
+
+/* --- INICIO: NUEVOS ESTILOS DE IMPRESIÓN --- */
+
+@media print {
+  /* Oculta la UI principal de la app (navbar, búsqueda, carrito) */
+  .main-ui, nav {
+    display: none !important;
+  }
+
+  /* Oculta los botones del modal */
+  .modal-buttons {
+    display: none !important;
+  }
+
+  /* Expande el modal de impresión para que ocupe toda la página */
+  .print-modal-wrapper {
+    position: fixed !important;
+    inset: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: white !important;
+    border: none !important;
+    box-shadow: none !important;
+    z-index: 9999 !important;
+    overflow: visible !important;
+  }
+
+  /* Asegura que el contenedor de la factura use todo el espacio */
+  .factura-print-container {
+    box-shadow: none !important;
+    border: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    overflow: visible !important;
+    display: block !important;
+    visibility: visible !important;
+  }
+  
+  /* Asegura que todo el texto sea visible (forzar color) */
+  .factura-print-container * {
+     color: #000 !important;
+     background: #fff !important;
+  }
+}
+
+/* --- FIN: NUEVOS ESTILOS DE IMPRESIÓN --- */

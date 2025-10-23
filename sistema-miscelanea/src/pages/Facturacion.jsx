@@ -1,210 +1,313 @@
-import React, { useState, useEffect } from 'react';
+// src/pages/Facturacion.jsx
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
-import TablaVenta from '../components/TablaVenta'; // Importar la tabla de carrito
+import TablaVenta from '../components/TablaVenta';
+import FacturaImprimible from '../components/FacturaImprimible';
 
 function Facturacion() {
   const [productosInventario, setProductosInventario] = useState([]);
+  const [busqueda, setBusqueda] = useState('');
+  const [sugerencias, setSugerencias] = useState([]);
   const [itemsVenta, setItemsVenta] = useState([]);
-  const [skuBusqueda, setSkuBusqueda] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [mensajeVenta, setMensajeVenta] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [mensaje, setMensaje] = useState(null);
+  const [ventaExitosa, setVentaExitosa] = useState(null);
+  const [ivaPorcentaje, setIvaPorcentaje] = useState(19);
 
-  // --- Lógica de Carga de Inventario (Función get-productos.js) ---
-  const cargarInventario = () => {
-    setLoading(true);
-    axios.get('/.netlify/functions/get-productos')
-      .then(res => {
-        setProductosInventario(res.data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Error al cargar inventario:', err);
-        setError('No se pudo cargar el inventario. Revise la API.');
-        setLoading(false);
-      });
-  };
+  const busquedaRef = useRef(null);
 
+  // 1. ⚙️ Cargar inventario (Esta lógica ya estaba bien)
   useEffect(() => {
+    const cargarInventario = async () => {
+      try {
+        const res = await axios.get('/.netlify/functions/get-productos');
+        setProductosInventario(res.data);
+      } catch (err) {
+        console.error("Error al cargar inventario para búsqueda:", err);
+        setMensaje({ type: 'error', text: 'Error al cargar productos del inventario.' });
+      }
+    };
     cargarInventario();
-  }, []); // Carga el inventario al iniciar la página
+  }, [ventaExitosa]); // RECARGA inventario después de una venta exitosa
 
-  // --- Lógica de Cálculo de Totales ---
-  const subtotal = itemsVenta.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
-  const ivaRate = 0.19; // IVA en Colombia
-  const iva = subtotal * ivaRate; 
-  const total = subtotal + iva;
+  // 2. 🔍 Lógica de búsqueda (YA ESTABA BIEN, pero ahora funciona gracias al fix de get-productos.js)
+  const handleBusquedaChange = useCallback((e) => {
+    const valor = e.target.value;
+    setBusqueda(valor);
 
-  // --- Lógica para Agregar Producto a la Venta ---
-  const agregarProducto = () => {
-    if (!skuBusqueda) return;
+    if (valor.length > 1) { // Reducido a 2 caracteres para mejor UX
+      const filtered = productosInventario.filter(prod =>
+        prod.nombre.toLowerCase().includes(valor.toLowerCase()) ||
+        prod._id.toLowerCase().includes(valor.toLowerCase()) // Ahora sí funciona
+      );
+      setSugerencias(filtered);
+    } else {
+      setSugerencias([]);
+    }
+  }, [productosInventario]);
 
-    // Buscar el producto en el inventario
-    const producto = productosInventario.find(p => 
-      p.nombre.toLowerCase().includes(skuBusqueda.toLowerCase()) // Búsqueda por nombre
-    );
+  // 3. ➕ Agregar al carrito (Lógica ya estaba bien, ahora funciona gracias a get-productos.js)
+  const agregarProductoAlCarrito = useCallback((producto) => {
+    setMensaje(null);
+    setBusqueda('');
+    setSugerencias([]);
 
-    if (!producto) {
-      setMensajeVenta({ type: 'error', text: 'Producto no encontrado.' });
-      setSkuBusqueda('');
+    const productoEnInventario = productosInventario.find(p => p._id === producto._id);
+
+    if (!productoEnInventario) {
+      setMensaje({ type: 'error', text: 'Error: Producto no encontrado.' });
       return;
     }
-    
-    // Si ya está en la venta, incrementa la cantidad
-    const itemExistente = itemsVenta.find(item => item._id === producto._id);
-    if (itemExistente) {
-      if (itemExistente.cantidad >= producto.stock) {
-        setMensajeVenta({ type: 'error', text: `Stock insuficiente para ${producto.nombre}.` });
-        return;
+
+    if (productoEnInventario.stock <= 0) {
+      setMensaje({ type: 'error', text: `¡Alerta! "${producto.nombre}" está agotado.` });
+      return;
+    }
+
+    setItemsVenta(prevItems => {
+      const itemExistente = prevItems.find(item => item._id === producto._id);
+
+      if (itemExistente) {
+        const nuevaCantidad = itemExistente.cantidad + 1;
+        if (nuevaCantidad > productoEnInventario.stock) {
+          setMensaje({ type: 'error', text: `No hay suficiente stock de "${producto.nombre}". Stock actual: ${productoEnInventario.stock}` });
+          return prevItems;
+        }
+        return prevItems.map(item =>
+          item._id === producto._id ? { ...item, cantidad: nuevaCantidad } : item
+        );
+      } else {
+        return [
+          ...prevItems,
+          {
+            _id: producto._id,
+            nombre: producto.nombre,
+            precio: producto.precio,
+            costo: producto.costo,
+            cantidad: 1,
+            stock: productoEnInventario.stock,
+          },
+        ];
       }
-      setItemsVenta(itemsVenta.map(item => 
-        item._id === producto._id ? { ...item, cantidad: item.cantidad + 1 } : item
-      ));
-    } else {
-      // Si es nuevo, agrégalo
-      setItemsVenta([...itemsVenta, { ...producto, cantidad: 1 }]);
+    });
+    
+    if (busquedaRef.current) {
+        busquedaRef.current.focus();
     }
+  }, [productosInventario]);
 
-    setSkuBusqueda('');
-    setMensajeVenta(null);
-  };
+  // 4. Actualizar cantidad (Lógica ya estaba bien)
+  const actualizarItemEnCarrito = useCallback((idProducto, nuevaCantidad) => {
+    setMensaje(null);
 
-  // Lógica para manejar cambios en la cantidad o eliminar ítems
-  const actualizarItemVenta = (id, nuevaCantidad) => {
-    const productoInventario = productosInventario.find(p => p._id === id);
+    setItemsVenta(prevItems => {
+      const productoInventario = productosInventario.find(p => p._id === idProducto);
+      if (!productoInventario) return prevItems;
 
-    if (nuevaCantidad <= 0) {
-      // Eliminar si la cantidad es 0 o menos
-      setItemsVenta(itemsVenta.filter(item => item._id !== id));
-      setMensajeVenta(null);
-    } else if (nuevaCantidad > productoInventario.stock) {
-        setMensajeVenta({ type: 'error', text: `Cantidad excede el stock disponible de ${productoInventario.nombre}.` });
-        return;
-    } else {
-      // Actualizar cantidad
-      setItemsVenta(itemsVenta.map(item => 
-        item._id === id ? { ...item, cantidad: nuevaCantidad } : item
-      ));
-      setMensajeVenta(null);
-    }
-  };
+      if (nuevaCantidad <= 0) {
+        return prevItems.filter(item => item._id !== idProducto);
+      } else if (nuevaCantidad > productoInventario.stock) {
+        setMensaje({ type: 'error', text: `No hay suficiente stock de "${productoInventario.nombre}". Stock actual: ${productoInventario.stock}` });
+        // Devolvemos la cantidad máxima posible
+         return prevItems.map(item =>
+          item._id === idProducto ? { ...item, cantidad: productoInventario.stock } : item
+        );
+      } else {
+        return prevItems.map(item =>
+          item._id === idProducto ? { ...item, cantidad: nuevaCantidad } : item
+        );
+      }
+    });
+  }, [productosInventario]);
 
-  // --- Lógica de Procesamiento y Guardado de la Venta (guardar-venta.js) ---
+  // 5. 💰 Cálculos (Lógica ya estaba bien)
+  const subtotal = itemsVenta.reduce((sum, item) => sum + item.precio * item.cantidad, 0);
+  const ivaCalculado = subtotal * (ivaPorcentaje / 100);
+  const total = subtotal + ivaCalculado;
+  
+  // 6. ✅ Procesar Venta (Lógica ya estaba bien, solo ajusté el guardado de ventaExitosa)
   const procesarVenta = async () => {
     if (itemsVenta.length === 0) {
-      setMensajeVenta({ type: 'error', text: 'Agrega al menos un producto para facturar.' });
+      setMensaje({ type: 'error', text: 'El carrito está vacío.' });
       return;
     }
-
-    setMensajeVenta({ type: 'info', text: 'Procesando venta...' });
-    
-    const ventaData = {
-        items: itemsVenta,
-        subtotal: subtotal,
-        iva: iva,
-        total: total,
-    };
+    setLoading(true);
+    setMensaje(null);
 
     try {
-        // 1. Llama a la Netlify Function para guardar la venta y descontar inventario
-        const response = await axios.post('/.netlify/functions/guardar-venta', ventaData);
+      const costoTotalProductos = itemsVenta.reduce((sum, item) => sum + (item.costo || 0) * item.cantidad, 0);
+      const totalGanancias = subtotal - costoTotalProductos;
 
-        // 2. Éxito: Mostrar mensaje, resetear, recargar inventario y simular impresión
-        setMensajeVenta({ 
-            type: 'success', 
-            text: `Venta #${response.data.ventaId.substring(0, 8)} registrada. Inventario actualizado.` 
-        });
-        
-        // 3. Simular Impresión (usando el Media Query de CSS)
-        setTimeout(() => {
-          window.print(); 
-        }, 500);
+      const ventaData = {
+        fecha_venta: new Date().toISOString(),
+        items: itemsVenta.map(item => ({
+          producto_id: item._id, // Aseguramos que se envía _id
+          nombre: item.nombre,
+          precio: item.precio,
+          costo: item.costo,
+          cantidad: item.cantidad,
+        })),
+        subtotal: subtotal,
+        iva: ivaCalculado,
+        total: total,
+        total_ganancias: totalGanancias,
+      };
 
-        // 4. Resetear la venta
-        setItemsVenta([]);
-        
-        // 5. Recargar el inventario (para mostrar el stock actualizado)
-        cargarInventario(); 
+      const res = await axios.post('/.netlify/functions/guardar-venta', ventaData);
+      
+      setMensaje({ type: 'success', text: `¡Venta registrada! ID: ${res.data.ventaId}` });
+      
+      // Guardamos la data completa para la factura (incluyendo la fecha que generamos)
+      setVentaExitosa({
+          ...ventaData,
+          _id: res.data.ventaId // Añadimos el ID devuelto
+      }); 
+      
+      setItemsVenta([]); // Limpiar carrito
+      
+      // No necesitamos recargar el inventario aquí, el useEffect [ventaExitosa] lo hará.
 
-    } catch (error) {
-        console.error('Error al procesar venta:', error.response ? error.response.data : error.message);
-        setMensajeVenta({ 
-            type: 'error', 
-            text: 'ERROR al registrar la venta. Revise conexión a DB.' 
-        });
+    } catch (err) {
+      console.error('Error al procesar la venta:', err.response ? err.response.data : err.message);
+      setMensaje({ type: 'error', text: `Error al registrar venta: ${err.response?.data?.error || err.message}` });
+    } finally {
+      setLoading(false);
     }
   };
   
-  // --- UI/RENDER ---
-  if (loading) return <div className="text-center p-8">Cargando TPV...</div>;
-  if (error) return <div className="text-center p-8 text-red-500">{error}</div>;
+  // 7. 🖨️ Función para imprimir (SIMPLIFICADA)
+  const handleImprimirFactura = () => {
+    window.print(); // Los estilos CSS de @media print se encargarán de todo
+    setVentaExitosa(null); // Cierra la vista previa después de imprimir
+  };
 
   return (
-    <div className="p-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
-      
-      {/* Columna de Búsqueda y Carrito */}
-      <div className="lg:col-span-2 space-y-4">
-        <h1 className="text-3xl font-bold text-gray-800">Punto de Venta (POS)</h1>
-        
-        {/* Input de Búsqueda/Escaneo */}
-        <div className="flex space-x-2 p-4 bg-white rounded-lg shadow-md">
+    // Agregamos la clase "main-ui" para ocultar todo al imprimir
+    <div className="p-4 md:p-8 bg-gray-100 min-h-screen main-ui">
+      <h1 className="text-3xl font-bold mb-6 text-gray-800">Punto de Venta (POS)</h1>
+
+      {/* Sección de Búsqueda */}
+      <section className="bg-white p-6 rounded-lg shadow-xl mb-8 max-w-4xl mx-auto relative">
+        <h2 className="text-xl font-semibold text-gray-700 mb-4">Buscar y Añadir Producto</h2>
+        <div className="flex gap-2">
           <input
             type="text"
-            placeholder="Buscar producto por nombre o escanear ID"
-            value={skuBusqueda}
-            onChange={(e) => setSkuBusqueda(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && agregarProducto()}
-            className="flex-grow rounded-md border-2 border-gray-300 p-3 focus:border-indigo-500 focus:ring-indigo-500"
+            placeholder="Escanear ID o buscar por nombre..."
+            className="flex-grow p-3 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+            value={busqueda}
+            onChange={handleBusquedaChange}
+            onKeyPress={(e) => {
+                if (e.key === 'Enter' && sugerencias.length === 1) {
+                    agregarProductoAlCarrito(sugerencias[0]);
+                } else if (e.key === 'Enter' && busqueda.length > 0) {
+                    const productoExacto = productosInventario.find(p => p._id.toLowerCase() === busqueda.toLowerCase());
+                    if (productoExacto) {
+                        agregarProductoAlCarrito(productoExacto);
+                    } else if (sugerencias.length > 0) {
+                        agregarProductoAlCarrito(sugerencias[0]); // Agrega la primera sugerencia
+                    } else {
+                        setMensaje({ type: 'error', text: `Producto no encontrado.` });
+                    }
+                }
+            }}
+            ref={busquedaRef}
           />
           <button
-            onClick={agregarProducto}
-            className="bg-indigo-600 text-white p-3 rounded-md hover:bg-indigo-700"
+            onClick={() => {
+                const productoExacto = productosInventario.find(p => p._id.toLowerCase() === busqueda.toLowerCase());
+                if (productoExacto) {
+                    agregarProductoAlCarrito(productoExacto);
+                } else if (sugerencias.length > 0) {
+                   agregarProductoAlCarrito(sugerencias[0]); // Agrega la primera sugerencia si no hay match exacto
+                } else {
+                    setMensaje({ type: 'error', text: `Producto no encontrado.` });
+                }
+            }}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
+            disabled={!busqueda}
           >
             Añadir
           </button>
         </div>
 
-        {/* Mensaje de Feedback */}
-        {mensajeVenta && (
-          <div 
-            className={`p-3 rounded-md ${mensajeVenta.type === 'success' ? 'bg-green-100 text-green-700' : mensajeVenta.type === 'info' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'}`}
-          >
-            {mensajeVenta.text}
-          </div>
+        {/* Sugerencias de búsqueda (Ahora 100% funcional) */}
+        {sugerencias.length > 0 && busqueda.length > 1 && (
+          <ul className="absolute z-10 bg-white border border-gray-300 rounded-md mt-1 w-[calc(100%-3rem)] max-h-60 overflow-y-auto shadow-lg">
+            {sugerencias.map((prod) => (
+              <li
+                key={prod._id}
+                onClick={() => agregarProductoAlCarrito(prod)}
+                className="p-3 cursor-pointer hover:bg-gray-100 border-b border-gray-100 last:border-b-0"
+              >
+                {prod.nombre} (Stock: {prod.stock}) - ${prod.precio.toLocaleString()}
+              </li>
+            ))}
+          </ul>
         )}
 
-        {/* Tabla de Productos Seleccionados */}
-        <TablaVenta items={itemsVenta} actualizarItem={actualizarItemVenta} />
-      </div>
+        {mensaje && (
+          <div 
+            className={`mt-4 p-3 rounded-md text-sm ${mensaje.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
+          >
+            {mensaje.text}
+          </div>
+        )}
+      </section>
 
-      {/* Columna de Totales y Pago */}
-      <div className="bg-white p-6 rounded-lg shadow-xl h-fit lg:sticky lg:top-4">
-        <h2 className="text-2xl font-bold mb-4 border-b pb-2">Resumen de la Venta</h2>
-        
-        <div className="space-y-3 text-lg">
-          <div className="flex justify-between">
+      {/* Resumen de la Venta / Carrito */}
+      <section className="max-w-4xl mx-auto mb-8">
+        <h2 className="text-2xl font-semibold text-gray-700 mb-4">Resumen de la Venta</h2>
+        <TablaVenta items={itemsVenta} actualizarItem={actualizarItemEnCarrito} />
+
+        <div className="bg-white p-6 rounded-lg shadow-xl mt-4">
+          <div className="flex justify-between text-lg mb-2">
             <span>Subtotal:</span>
-            <span>${subtotal.toFixed(2)}</span>
+            <span>${subtotal.toLocaleString('es-CO')}</span>
           </div>
-          <div className="flex justify-between">
-            <span>IVA (19%):</span>
-            <span>${iva.toFixed(2)}</span>
+          <div className="flex justify-between text-lg mb-2">
+            <span>IVA ({ivaPorcentaje}%):</span>
+            <span>${ivaCalculado.toLocaleString('es-CO')}</span>
           </div>
-          <div className="flex justify-between font-bold text-2xl border-t pt-3">
+          <div className="flex justify-between text-xl font-bold border-t pt-2 mt-2">
             <span>TOTAL:</span>
-            <span>${total.toFixed(2)}</span>
+            <span>${total.toLocaleString('es-CO')}</span>
           </div>
         </div>
 
         <button
           onClick={procesarVenta}
-          className="mt-8 w-full bg-green-600 text-white text-xl py-3 rounded-lg hover:bg-green-700 disabled:opacity-50"
-          disabled={itemsVenta.length === 0}
+          disabled={loading || itemsVenta.length === 0}
+          className="mt-6 w-full py-3 bg-green-600 text-white text-xl font-bold rounded-lg shadow-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Procesar Venta y Facturar
+          {loading ? 'Procesando...' : 'Procesar Venta y Facturar'}
         </button>
-      </div>
+      </section>
 
+      {/* Vista previa de factura (MODIFICADO PARA IMPRESIÓN) */}
+      {ventaExitosa && (
+        // Agregamos la clase "print-modal-wrapper"
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4 print-modal-wrapper">
+          <div className="bg-white rounded-lg shadow-2xl p-6 md:p-8 max-w-3xl w-full max-h-[90vh] overflow-y-auto relative">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4 modal-buttons">Factura Generada</h2>
+            <FacturaImprimible venta={ventaExitosa} ivaPorcentaje={ivaPorcentaje} />
+            {/* Agregamos la clase "modal-buttons" para ocultarlos al imprimir */}
+            <div className="flex justify-end gap-4 mt-6 modal-buttons">
+              <button
+                onClick={() => setVentaExitosa(null)}
+                className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              >
+                Cerrar
+              </button>
+              <button
+                onClick={handleImprimirFactura}
+                className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+              >
+                Imprimir Factura
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

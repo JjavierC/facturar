@@ -27,14 +27,16 @@ exports.handler = async (event) => {
     const db = client.db("miscelanea");
     const productosCollection = db.collection("inventario");
 
-    // Devolver solo productos activos y mapear campos, incluyendo 'costo'
     const productos = await productosCollection.find({ activo: true }).toArray();
 
     const productosFormateados = productos.map((p) => ({
-      id: p._id.toString(),
+      // --- ESTA ES LA CORRECCIÓN CRÍTICA ---
+      _id: p._id.toString(), // Mantiene el _id original como string (lo necesita Facturacion.jsx)
+      id: p._id.toString(),  // Mantiene el id por si otra parte del código lo usa
+      // ------------------------------------
       nombre: p.nombre,
       precio: Number(p.precio || 0),
-      costo: Number(p.costo || 0),        // <-- ahora incluimos costo
+      costo: Number(p.costo || 0),
       stock: Number(p.stock || 0),
       descripcion: p.descripcion || "",
       fechaCreacion: p.fechaCreacion || null,

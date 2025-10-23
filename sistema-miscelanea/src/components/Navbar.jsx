@@ -46,7 +46,7 @@ function Navbar() {
           to="/inventario" 
           className={isActive('/inventario') ? "text-cyan-300 font-bold" : "hover:text-gray-300"}
         >
-          Inventario
+          Productos
         </Link>
         <Link 
           to="/reportes" 
