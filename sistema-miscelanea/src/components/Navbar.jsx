@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 
-const LOGO_URL = 
+// NOTA: Reemplaza 'URL_DE_TU_LOGO.png' con la ruta real a tu imagen de logo.
+const LOGO_URL = null; // o 'URL_DE_TU_LOGO.png'
 
 function Navbar() {
   return (
