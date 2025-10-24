@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import FacturaImprimible from "./FacturaImprimible";
-import "./index.css";
+import "../index.css";
 
 
 const Facturacion = () => {
