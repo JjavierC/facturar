@@ -67,3 +67,158 @@ body {
     margin: 10mm;
   }
 }
+/* ============================
+   Estilos específicos para factura
+   ============================ */
+
+.factura-card {
+  box-sizing: border-box;
+  background: #fff;
+  border: 1px solid #333;
+  padding: 12px;
+  /* ANCHO RESPONSIVE: en pantallas grandes hasta 760px, en pantallas pequeñas 95% */
+  width: min(760px, 95%);
+  max-width: 100%;
+  margin: 0 auto; /* centra en el modal / página */
+  color: #111;
+  line-height: 1.2;
+  font-size: 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+/* Forzar que no haya transform en ancestros que pueda romper impresión/visual */
+.print-modal-wrapper,
+.print-modal-wrapper * {
+  transform: none !important;
+}
+
+/* header */
+.factura-header {
+  border-bottom: 1px solid #333;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+}
+.factura-title {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: 0.5px;
+}
+
+/* meta info */
+.factura-meta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+.meta-label {
+  font-weight: 700;
+  font-size: 12px;
+}
+.meta-value {
+  font-size: 13px;
+}
+
+/* tabla */
+.factura-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 8px;
+}
+.factura-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.factura-table th,
+.factura-table td {
+  border: 1px solid #666;
+  padding: 6px 8px;
+  text-align: left;
+}
+.factura-table th {
+  background: #efefef;
+  font-weight: 700;
+  font-size: 12px;
+}
+.text-center { text-align: center; }
+
+/* totales */
+.factura-totales {
+  margin-top: 8px;
+  border-top: 1px solid #666;
+  padding-top: 8px;
+  width: 100%;
+}
+.tot-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 2px 0;
+}
+.total-final {
+  font-weight: 800;
+  margin-top: 6px;
+  font-size: 15px;
+}
+.small-note {
+  font-size: 12px;
+  color: #444;
+  margin-top: 6px;
+}
+
+/* footer */
+.factura-footer {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 13px;
+}
+
+/* acciones (botones dentro del modal) */
+.factura-actions { text-align: right; }
+
+/* ============================
+   Ajustes específicos de impresión (ya usamos antes, aquí refinados)
+   ============================ */
+
+@media print {
+  /* Oculta la UI principal */
+  .no-print { display: none !important; }
+
+  /* Oculta botones de la UI/modal que no se quieren imprimir */
+  .modal-buttons { display: none !important; }
+
+  /* Asegurar que el modal/factura ocupe el ancho disponible al imprimir */
+  .print-modal-wrapper {
+    position: fixed !important;
+    inset: 0 !important;
+    background: white !important;
+    z-index: 9999 !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .factura-card {
+    width: auto !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: 1px solid #000 !important;
+    page-break-inside: avoid !important;
+  }
+
+  .factura-table td, .factura-table th {
+    color: #000 !important;
+    background: transparent !important;
+  }
+
+  /* Márgenes de la página para evitar recortes por navegadores */
+  @page { size: auto; margin: 10mm; }
+}
+
+/* ============================
+   Consejo: si en tu proyecto usas Tailwind u otras utilidades,
+   las reglas anteriores siguen aplicando porque son específicas.
+   ============================ */

@@ -1,70 +1,110 @@
-// src/components/FacturaImprimible.jsx
-import React from 'react';
+import React from "react";
 
-function FacturaImprimible({ venta, ivaPorcentaje }) {
-  if (!venta) {
-    return <p className="text-center text-gray-500">No hay datos de venta para mostrar.</p>;
-  }
+/**
+ * FacturaImprimible.jsx
+ * Componente responsive: se adapta a móvil y escritorio.
+ * Usa clases CSS que deben existir en index.css (añadidas abajo).
+ *
+ * Props:
+ *  - venta: objeto de la venta (items, subtotal, iva, total, fecha_venta, _id)
+ *  - ivaPorcentaje: número
+ */
+
+const FormatoMoneda = (num) => {
+  if (num == null) return "$0";
+  return `$${Number(num).toLocaleString()}`;
+};
+
+const FacturaImprimible = ({ venta, ivaPorcentaje = 19 }) => {
+  if (!venta) return null;
+
+  const { items = [], subtotal = 0, iva = 0, total = 0, fecha_venta, _id } = venta;
 
   return (
-    <div className="factura-print-container p-6 border border-gray-300 rounded-lg bg-white shadow-sm">
-      <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">FACTURA DE VENTA</h1>
-      
-      <div className="mb-6 border-b pb-4">
-        <p className="text-sm text-gray-600"><strong>Fecha:</strong> {new Date(venta.fecha_venta).toLocaleString()}</p>
-        <p className="text-sm text-gray-600"><strong>ID de Venta:</strong> {venta._id}</p>
-        {/* Aquí podrías añadir info del cliente si la tuvieras */}
-        <p className="text-sm text-gray-600"><strong>Vendedor:</strong> Cajero (ejemplo)</p>
+    <div className="factura-card" role="document" aria-label="Factura">
+      <div className="factura-header">
+        <h1 className="factura-title">FACTURA DE VENTA</h1>
       </div>
 
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold mb-3 text-gray-700">Detalle de Productos:</h2>
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="factura-meta">
+        <div>
+          <div className="meta-label">Fecha:</div>
+          <div className="meta-value">
+            {fecha_venta ? new Date(fecha_venta).toLocaleString() : "-"}
+          </div>
+        </div>
+        <div>
+          <div className="meta-label">ID de Venta:</div>
+          <div className="meta-value">{_id}</div>
+        </div>
+        <div>
+          <div className="meta-label">Vendedor:</div>
+          <div className="meta-value">Cajero (ejemplo)</div>
+        </div>
+      </div>
+
+      <h3 className="factura-subtitle">Detalle de Productos:</h3>
+
+      <div className="factura-table-wrapper">
+        <table className="factura-table" cellSpacing="0" cellPadding="4">
+          <thead>
             <tr>
-              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
-              <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Cant.</th>
-              <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">P. Unit.</th>
-              <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+              <th>PRODUCTO</th>
+              <th className="text-center">CANT.</th>
+              <th className="text-center">P. UNIT.</th>
+              <th className="text-center">TOTAL</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {venta.items.map((item, index) => (
-              <tr key={index}>
-                <td className="px-4 py-2 text-sm text-gray-900">{item.nombre}</td>
-                <td className="px-4 py-2 text-center text-sm text-gray-500">{item.cantidad}</td>
-                <td className="px-4 py-2 text-right text-sm text-gray-500">${item.precio.toLocaleString()}</td>
-                <td className="px-4 py-2 text-right text-sm text-gray-900 font-medium">${(item.precio * item.cantidad).toLocaleString()}</td>
+          <tbody>
+            {items.map((it, idx) => (
+              <tr key={idx}>
+                <td>{it.nombre || it.producto || "Item"}</td>
+                <td className="text-center">{it.cantidad ?? 1}</td>
+                <td className="text-center">{FormatoMoneda(it.precio ?? 0)}</td>
+                <td className="text-center">
+                  {FormatoMoneda((it.precio ?? 0) * (it.cantidad ?? 1))}
+                </td>
               </tr>
             ))}
+
+            {/* si no hay items, mostrar fila vacía */}
+            {items.length === 0 && (
+              <tr>
+                <td colSpan="4" style={{ textAlign: "center", padding: "12px 0" }}>
+                  No hay productos.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
 
-      <div className="border-t pt-4">
-        <div className="flex justify-between mb-2">
-          <span className="text-base text-gray-700">Subtotal:</span>
-          <span className="text-base text-gray-800">${venta.subtotal.toLocaleString()}</span>
+      <div className="factura-totales">
+        <div className="tot-row">
+          <div>Subtotal:</div>
+          <div>{FormatoMoneda(subtotal)}</div>
         </div>
-        <div className="flex justify-between mb-2">
-          <span className="text-base text-gray-700">IVA ({ivaPorcentaje || 0}%):</span>
-          <span className="text-base text-gray-800">${venta.iva.toLocaleString()}</span>
+        <div className="tot-row">
+          <div>IVA ({ivaPorcentaje}%):</div>
+          <div>{FormatoMoneda(iva)}</div>
         </div>
-        <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
-          <span className="text-gray-800">TOTAL A PAGAR:</span>
-          <span className="text-indigo-600">${venta.total.toLocaleString()}</span>
+        <div className="tot-row total-final">
+          <div>TOTAL A PAGAR:</div>
+          <div>{FormatoMoneda(total)}</div>
         </div>
-        {venta.total_ganancias !== undefined && (
-          <div className="flex justify-between text-sm text-gray-500 italic mt-2">
-            <span>Ganancia Bruta:</span>
-            <span>${venta.total_ganancias.toLocaleString()}</span>
-          </div>
-        )}
+        <div className="small-note">Ganancia Bruta: {FormatoMoneda(venta.total_ganancias ?? 0)}</div>
       </div>
 
-      <p className="text-center text-xs text-gray-500 mt-6">¡Gracias por su compra!</p>
+      <div className="factura-footer">
+        <div>¡Gracias por su compra!</div>
+      </div>
+
+      {/* Botones (se pueden ocultar en impresión con .modal-buttons) */}
+      <div className="factura-actions modal-buttons" style={{ marginTop: 8 }}>
+        {/* Estos botones los maneja el componente padre (Facturacion.jsx) */}
+      </div>
     </div>
   );
-}
+};
 
 export default FacturaImprimible;
