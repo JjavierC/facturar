@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import FacturaImprimible from "./FacturaImprimible";
+import FacturaImprimible from "../components/FacturaImprimible";
 import "./index.css"; // ✅ Importa los estilos globales y de factura
 
 const Facturacion = () => {
