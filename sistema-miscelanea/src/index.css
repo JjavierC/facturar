@@ -1,50 +1,46 @@
-/* src/index.css */
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-/* Importa la fuente "Inter" que usa tu diseño de Figma */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
 
-/* Estilo global para la página y la tabla. 
-  Esto es necesario porque la tabla de Figma no tiene espacios entre bordes.
-*/
+/* ===================================
+   ESTILOS GENERALES
+=================================== */
+
 body {
   font-family: 'Inter', sans-serif;
-  background-color: #f0f2f5; /* Un fondo para que resalte el contenedor blanco */
+  background-color: #f9fafb;
+  color: #111827;
+  margin: 0;
+  padding: 0;
 }
 
-.tabla-figma {
-  border-collapse: collapse; /* Une los bordes de la tabla */
-}
-
-/* --- INICIO: NUEVOS ESTILOS DE IMPRESIÓN --- */
+/* ===================================
+   AJUSTES DE IMPRESIÓN
+=================================== */
 
 @media print {
-  /* Oculta la UI principal de la app (navbar, búsqueda, carrito) */
-  .main-ui, nav {
+  /* Oculta la interfaz principal */
+  .no-print {
     display: none !important;
   }
 
-  /* Oculta los botones del modal */
+  /* Oculta los botones dentro del modal */
   .modal-buttons {
     display: none !important;
   }
 
-  /* Expande el modal de impresión para que ocupe toda la página */
+  /* Estructura del modal en impresión */
   .print-modal-wrapper {
     position: fixed !important;
     inset: 0 !important;
+    background: white !important;
+    z-index: 9999 !important;
+    display: block !important;
     padding: 0 !important;
     margin: 0 !important;
-    background: white !important;
-    border: none !important;
-    box-shadow: none !important;
-    z-index: 9999 !important;
-    overflow: visible !important;
   }
 
-  /* Asegura que el contenedor de la factura use todo el espacio */
+  /* Contenedor de la factura */
   .factura-print-container {
     box-shadow: none !important;
     border: none !important;
@@ -52,15 +48,22 @@ body {
     max-width: 100% !important;
     max-height: 100% !important;
     overflow: visible !important;
-    display: block !important;
-    visibility: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
   }
-  
-  /* Asegura que todo el texto sea visible (forzar color) */
+
   .factura-print-container * {
-     color: #000 !important;
-     background: #fff !important;
+    color: #000 !important;
+    background: #fff !important;
+  }
+
+  table {
+    page-break-inside: avoid !important;
+  }
+
+  /* Márgenes de página */
+  @page {
+    size: auto;
+    margin: 10mm;
   }
 }
-
-/* --- FIN: NUEVOS ESTILOS DE IMPRESIÓN --- */
