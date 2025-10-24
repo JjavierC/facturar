@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import FacturaImprimible from "./FacturaImprimible";
-import "../index.css";
-
+import "./index.css"; // ✅ Importa los estilos globales y de factura
 
 const Facturacion = () => {
   const [productos, setProductos] = useState([]);
@@ -12,19 +11,23 @@ const Facturacion = () => {
   const [ventaExitosa, setVentaExitosa] = useState(null);
 
   useEffect(() => {
-    const productosGuardados = JSON.parse(localStorage.getItem("productos")) || [];
+    const productosGuardados =
+      JSON.parse(localStorage.getItem("productos")) || [];
     setProductos(productosGuardados);
   }, []);
 
+  // --- Función para agregar productos al carrito ---
   const agregarAlCarrito = () => {
     if (!productoSeleccionado) return;
 
     const producto = productos.find((p) => p.nombre === productoSeleccionado);
     if (!producto) return;
 
-    const itemExistente = carrito.find((item) => item.nombre === producto.nombre);
-    let nuevoCarrito;
+    const itemExistente = carrito.find(
+      (item) => item.nombre === producto.nombre
+    );
 
+    let nuevoCarrito;
     if (itemExistente) {
       nuevoCarrito = carrito.map((item) =>
         item.nombre === producto.nombre
@@ -40,17 +43,20 @@ const Facturacion = () => {
     setCantidad(1);
   };
 
+  // --- Función para eliminar producto del carrito ---
   const eliminarDelCarrito = (nombre) => {
     const nuevoCarrito = carrito.filter((item) => item.nombre !== nombre);
     setCarrito(nuevoCarrito);
   };
 
+  // --- Cálculos automáticos ---
   const calcularSubtotal = () =>
     carrito.reduce((total, item) => total + item.precio * item.cantidad, 0);
 
   const calcularIVA = () => (calcularSubtotal() * ivaPorcentaje) / 100;
   const calcularTotal = () => calcularSubtotal() + calcularIVA();
 
+  // --- Procesar y registrar venta ---
   const registrarVenta = () => {
     if (carrito.length === 0) return alert("El carrito está vacío.");
 
@@ -62,7 +68,7 @@ const Facturacion = () => {
       total: calcularTotal(),
       total_ganancias: carrito.reduce(
         (total, item) =>
-          total + (item.precio - item.costo) * item.cantidad,
+          total + (item.precio - (item.costo || 0)) * item.cantidad,
         0
       ),
       fecha_venta: new Date().toISOString(),
@@ -82,15 +88,19 @@ const Facturacion = () => {
     window.print();
   };
 
+  // =====================================================
+  //                   RENDER PRINCIPAL
+  // =====================================================
+
   return (
     <>
-      {/* Contenido principal de la interfaz */}
+      {/* Interfaz principal */}
       <div className="p-4 md:p-8 bg-gray-100 min-h-screen no-print">
         <h1 className="text-2xl font-bold mb-6 text-center text-gray-800">
-          Sistema de Facturación
+          Punto de Venta (POS)
         </h1>
 
-        {/* Selección de producto */}
+        {/* Selección de productos */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <select
             value={productoSeleccionado}
@@ -117,15 +127,19 @@ const Facturacion = () => {
             onClick={agregarAlCarrito}
             className="bg-green-600 text-white rounded-md px-4 py-2 hover:bg-green-700"
           >
-            Agregar al carrito
+            Añadir
           </button>
         </div>
 
         {/* Carrito */}
         <div className="bg-white shadow-md rounded-lg p-4">
-          <h2 className="text-lg font-bold mb-3 text-gray-700">Carrito</h2>
+          <h2 className="text-lg font-bold mb-3 text-gray-700">
+            Resumen de la Venta
+          </h2>
           {carrito.length === 0 ? (
-            <p className="text-gray-500">No hay productos en el carrito.</p>
+            <p className="text-gray-500">
+              Agrega productos escaneando el código o buscándolos por nombre.
+            </p>
           ) : (
             <table className="w-full border">
               <thead className="bg-gray-200 text-gray-700">
@@ -165,26 +179,34 @@ const Facturacion = () => {
         <div className="mt-6 bg-white shadow-md rounded-lg p-4 text-right text-gray-700">
           <p>Subtotal: ${calcularSubtotal()}</p>
           <p>IVA ({ivaPorcentaje}%): ${calcularIVA()}</p>
-          <p className="font-bold text-lg">Total: ${calcularTotal()}</p>
+          <p className="font-bold text-lg">TOTAL: ${calcularTotal()}</p>
 
           <button
             onClick={registrarVenta}
             className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700"
           >
-            Registrar Venta
+            Procesar Venta y Facturar
           </button>
         </div>
       </div>
 
-      {/* Modal de factura (fuera del área no imprimible) */}
+      {/* =====================================================
+            MODAL DE FACTURA (CENTRADO Y FIJO)
+      ===================================================== */}
       {ventaExitosa && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4 print-modal-wrapper">
-          <div className="bg-white rounded-lg shadow-2xl p-6 md:p-8 max-w-3xl w-full max-h-[90vh] overflow-y-auto relative factura-print-container">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4 modal-buttons">
+        <div className="print-modal-wrapper">
+          <div className="factura-print-container factura-card relative">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4 modal-buttons text-center">
               Factura Generada
             </h2>
-            <FacturaImprimible venta={ventaExitosa} ivaPorcentaje={ivaPorcentaje} />
 
+            {/* Componente de factura */}
+            <FacturaImprimible
+              venta={ventaExitosa}
+              ivaPorcentaje={ivaPorcentaje}
+            />
+
+            {/* Botones dentro del modal */}
             <div className="flex justify-end gap-4 mt-6 modal-buttons">
               <button
                 onClick={() => setVentaExitosa(null)}
