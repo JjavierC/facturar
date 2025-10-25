@@ -18,7 +18,7 @@ const FacturaImprimible = ({ venta, ivaPorcentaje = 19 }) => {
       {/* === NUEVO ENCABEZADO CON LOGO Y NOMBRE === */}
       <div className="factura-header">
         <img
-          src="/logo.jfif"
+          src="./logo.jfif"
           alt="Logo Miscelánea La Económica"
           className="factura-logo"
         />
