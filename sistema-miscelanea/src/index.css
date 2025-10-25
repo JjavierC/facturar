@@ -294,4 +294,25 @@ body {
     margin: 5mm 10mm;  /* 🔸 Márgenes más pequeños para usar toda la hoja */
   }
 }
+/* === Encabezado con logo y nombre === */
+.factura-header {
+  text-align: center !important;
+  margin-bottom: 15px !important;
+}
+
+.factura-logo {
+  width: 80px !important;
+  height: 80px !important;
+  object-fit: contain !important;
+  display: block !important;
+  margin: 0 auto 8px auto !important;
+}
+
+.factura-nombre {
+  font-size: 20px !important;
+  font-weight: 800 !important;
+  margin: 0 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
 

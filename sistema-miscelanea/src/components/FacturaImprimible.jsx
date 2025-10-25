@@ -1,14 +1,6 @@
 import React from "react";
 
-/**
- * FacturaImprimible.jsx
- * Componente responsive: se adapta a móvil y escritorio.
- * Usa clases CSS que deben existir en index.css (añadidas abajo).
- *
- * Props:
- *  - venta: objeto de la venta (items, subtotal, iva, total, fecha_venta, _id)
- *  - ivaPorcentaje: número
- */
+
 
 const FormatoMoneda = (num) => {
   if (num == null) return "$0";
@@ -22,10 +14,19 @@ const FacturaImprimible = ({ venta, ivaPorcentaje = 19 }) => {
 
   return (
     <div className="factura-card" role="document" aria-label="Factura">
+
+      {/* === NUEVO ENCABEZADO CON LOGO Y NOMBRE === */}
       <div className="factura-header">
+        <img
+          src="/logo.jfif"
+          alt="Logo Miscelánea La Económica"
+          className="factura-logo"
+        />
+        <h2 className="factura-nombre">Miscelánea La Económica</h2>
         <h1 className="factura-title">FACTURA DE VENTA</h1>
       </div>
 
+      {/* === DATOS DE FACTURA === */}
       <div className="factura-meta">
         <div>
           <div className="meta-label">Fecha:</div>
@@ -45,6 +46,7 @@ const FacturaImprimible = ({ venta, ivaPorcentaje = 19 }) => {
 
       <h3 className="factura-subtitle">Detalle de Productos:</h3>
 
+      {/* === TABLA DE PRODUCTOS === */}
       <div className="factura-table-wrapper">
         <table className="factura-table" cellSpacing="0" cellPadding="4">
           <thead>
@@ -79,6 +81,7 @@ const FacturaImprimible = ({ venta, ivaPorcentaje = 19 }) => {
         </table>
       </div>
 
+      {/* === TOTALES === */}
       <div className="factura-totales">
         <div className="tot-row">
           <div>Subtotal:</div>
@@ -95,11 +98,12 @@ const FacturaImprimible = ({ venta, ivaPorcentaje = 19 }) => {
         <div className="small-note">Ganancia Bruta: {FormatoMoneda(venta.total_ganancias ?? 0)}</div>
       </div>
 
+      {/* === PIE DE FACTURA === */}
       <div className="factura-footer">
         <div>¡Gracias por su compra!</div>
       </div>
 
-      {/* Botones (se pueden ocultar en impresión con .modal-buttons) */}
+      {/* Botones (se ocultan al imprimir) */}
       <div className="factura-actions modal-buttons" style={{ marginTop: 8 }}>
         {/* Estos botones los maneja el componente padre (Facturacion.jsx) */}
       </div>
