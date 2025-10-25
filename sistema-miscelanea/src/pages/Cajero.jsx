@@ -1,63 +1,35 @@
-// src/pages/Cajero.jsx
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { FaUserAlt, FaBoxes, FaFileInvoiceDollar, FaDollarSign } from 'react-icons/fa';
+import React from "react";
+import { Link } from "react-router-dom";
+import { FaUser, FaBox, FaFileInvoiceDollar, FaDollarSign } from "react-icons/fa";
 
-// Este componente es el botón grande del menú
-function MenuBoton({ to, icon, label }) {
+const Cajero = () => {
   return (
-    <Link
-      to={to}
-      className="bg-gray-100 border border-gray-300 rounded-xl shadow-md p-8
-                 flex flex-col items-center justify-center gap-4 
-                 hover:bg-gray-200 hover:shadow-lg transition-all transform hover:-translate-y-1"
-      style={{ minHeight: '180px' }}
-    >
-      {icon}
-      <span className="text-2xl font-semibold text-gray-700">{label}</span>
-    </Link>
-  );
-}
+    <div className="cajero-container">
+      <h1 className="titulo-cajero">Panel del Cajero</h1>
 
-function Cajero() {
-  return (
-    <div className="p-8 md:p-12 bg-white min-h-screen">
-      <h1 className="text-4xl font-bold text-center text-gray-800 mb-12">
-        Panel del Cajero
-      </h1>
-      
-      {/* Grid 2x2 para los botones del menú.
-        Usamos los paths que definiremos en App.jsx 
-      */}
-      <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-        
-        <MenuBoton 
-          to="/clientes" 
-          label="CLIENTE" 
-          icon={<FaUserAlt className="text-6xl text-blue-500" />} 
-        />
-        
-        <MenuBoton 
-          to="/inventario" 
-          label="PRODUCTOS" 
-          icon={<FaBoxes className="text-6xl text-orange-500" />} 
-        />
-        
-        <MenuBoton 
-          to="/reportes" 
-          label="FACTURAS" 
-          icon={<FaFileInvoiceDollar className="text-6xl text-green-500" />} 
-        />
-        
-        <MenuBoton 
-          to="/facturacion" 
-          label="VENTAS" 
-          icon={<FaDollarSign className="text-6xl text-purple-500" />} 
-        />
+      <div className="cajero-grid">
+        <Link to="/Clientes" className="cajero-card">
+          <FaUser className="cajero-icon" />
+          <span>CLIENTE</span>
+        </Link>
 
+        <Link to="/inventario" className="cajero-card">
+          <FaBox className="cajero-icon" />
+          <span>PRODUCTOS</span>
+        </Link>
+
+        <Link to="/reportes" className="cajero-card">
+          <FaFileInvoiceDollar className="cajero-icon" />
+          <span>FACTURAS</span>
+        </Link>
+
+        <Link to="/facturacion" className="cajero-card">
+          <FaDollarSign className="cajero-icon" />
+          <span>VENTAS</span>
+        </Link>
       </div>
     </div>
   );
-}
+};
 
 export default Cajero;
