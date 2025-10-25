@@ -161,25 +161,26 @@ body {
    IMPRESIÓN PROFESIONAL DE FACTURA
    ======================================= */
 @media print {
+  /* === Ajustes globales === */
   html, body {
     background: #fff !important;
     margin: 0 !important;
     padding: 0 !important;
     overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    color-adjust: exact !important;
   }
 
-  /* Ocultar toda la app excepto la factura */
+  /* Oculta todo excepto la factura */
   body * {
     visibility: hidden !important;
   }
-
-  /* Mostrar solo el modal y la factura */
   .print-modal-wrapper,
   .print-modal-wrapper * {
     visibility: visible !important;
   }
 
-  /* Modal de impresión */
+  /* === Contenedor del modal === */
   .print-modal-wrapper {
     position: absolute !important;
     top: 0 !important;
@@ -195,64 +196,64 @@ body {
     margin: 0 !important;
   }
 
-  /* Tarjeta de factura */
+  /* === Tarjeta de la factura === */
   .factura-card {
     width: 100% !important;
-    max-width: 720px !important;
+    max-width: 780px !important;   /* 🔸 Más ancha */
     background: #fff !important;
-    border: 1px solid #ccc !important;
-    padding: 20mm !important;
+    border: 1px solid #000 !important;
+    padding: 18mm !important;      /* 🔸 Margen interior equilibrado */
     color: #000 !important;
     font-family: "Inter", Arial, sans-serif !important;
-    font-size: 13px !important;
-    line-height: 1.4 !important;
+    font-size: 13.5px !important;
+    line-height: 1.45 !important;
     box-shadow: none !important;
     page-break-inside: avoid !important;
   }
 
-  /* Encabezado */
+  /* === Encabezado === */
   .factura-title {
     text-align: center !important;
-    font-size: 20px !important;
-    font-weight: 700 !important;
-    margin-bottom: 10px !important;
-    letter-spacing: 0.3px !important;
+    font-size: 22px !important;
+    font-weight: 800 !important;
+    margin-bottom: 12px !important;
+    letter-spacing: 0.4px !important;
+    border-bottom: 2px solid #000 !important;
+    padding-bottom: 4px !important;
   }
 
   .factura-meta {
     display: grid !important;
     grid-template-columns: repeat(3, 1fr) !important;
     gap: 6px !important;
-    margin-bottom: 12px !important;
+    margin-bottom: 16px !important;
   }
-  .meta-label { font-weight: 600 !important; font-size: 12px !important; }
+  .meta-label { font-weight: 700 !important; font-size: 12.5px !important; }
   .meta-value { font-size: 13px !important; }
 
-  /* Tabla */
+  /* === Tabla === */
   .factura-table {
     width: 100% !important;
     border-collapse: collapse !important;
     margin-top: 10px !important;
   }
-
   .factura-table th,
   .factura-table td {
-    border: 1px solid #aaa !important;
+    border: 1px solid #333 !important;
     text-align: center !important;
-    padding: 6px !important;
-    font-size: 12px !important;
+    padding: 7px 6px !important;
+    font-size: 13px !important;
   }
-
   .factura-table th {
-    background: #f4f4f4 !important;
-    font-weight: 600 !important;
+    background: #f2f2f2 !important;
+    font-weight: 700 !important;
   }
 
-  /* Totales */
+  /* === Totales === */
   .factura-totales {
-    margin-top: 12px !important;
-    border-top: 1px solid #999 !important;
-    padding-top: 8px !important;
+    margin-top: 14px !important;
+    border-top: 1px solid #444 !important;
+    padding-top: 10px !important;
   }
   .tot-row {
     display: flex !important;
@@ -260,26 +261,33 @@ body {
     margin: 3px 0 !important;
   }
   .total-final {
-    font-weight: 800 !important;
-    font-size: 14px !important;
+    font-weight: 900 !important;
+    font-size: 15px !important;
     border-top: 2px solid #000 !important;
-    padding-top: 4px !important;
+    padding-top: 6px !important;
   }
 
-  /* Pie */
+  /* === Pie === */
   .factura-footer {
     text-align: center !important;
-    font-size: 12px !important;
-    margin-top: 15px !important;
+    font-size: 13px !important;
+    margin-top: 18px !important;
+    border-top: 1px dashed #aaa !important;
+    padding-top: 6px !important;
   }
 
-  /* Ocultar botones */
-  .modal-buttons, .no-print { display: none !important; }
+  /* === Ocultar botones e interfaz === */
+  .modal-buttons, .no-print {
+    display: none !important;
+  }
 
-  /* Quitar efectos */
-  * { box-shadow: none !important; text-shadow: none !important; }
+  /* === Limpieza de efectos === */
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
 
-  /* Configuración de página */
+  /* === Configuración del papel === */
   @page {
     size: A4;
     margin: 10mm 15mm;
