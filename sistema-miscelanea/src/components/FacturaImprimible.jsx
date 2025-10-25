@@ -1,6 +1,5 @@
 import React from "react";
-
-
+import logo from "./logo.jfif"; // ✅ Importación correcta del logo
 
 const FormatoMoneda = (num) => {
   if (num == null) return "$0";
@@ -14,19 +13,28 @@ const FacturaImprimible = ({ venta, ivaPorcentaje = 19 }) => {
 
   return (
     <div className="factura-card" role="document" aria-label="Factura">
-
       {/* === NUEVO ENCABEZADO CON LOGO Y NOMBRE === */}
       <div className="factura-header">
         <img
-          src="./logo.jfif"
+          src={logo}
           alt="Logo Miscelánea La Económica"
           className="factura-logo"
+          style={{
+            width: "80px",
+            height: "80px",
+            objectFit: "contain",
+            marginBottom: "8px",
+          }}
         />
-        <h2 className="factura-nombre">Miscelánea La Económica</h2>
-        <h1 className="factura-title">FACTURA DE VENTA</h1>
+        <h2 className="factura-nombre" style={{ margin: 0, fontWeight: "800" }}>
+          Miscelánea La Económica
+        </h2>
+        <h1 className="factura-title" style={{ marginTop: "4px" }}>
+          FACTURA DE VENTA
+        </h1>
       </div>
 
-      {/* === DATOS DE FACTURA === */}
+      {/* === Datos principales === */}
       <div className="factura-meta">
         <div>
           <div className="meta-label">Fecha:</div>
@@ -44,9 +52,8 @@ const FacturaImprimible = ({ venta, ivaPorcentaje = 19 }) => {
         </div>
       </div>
 
+      {/* === Tabla de productos === */}
       <h3 className="factura-subtitle">Detalle de Productos:</h3>
-
-      {/* === TABLA DE PRODUCTOS === */}
       <div className="factura-table-wrapper">
         <table className="factura-table" cellSpacing="0" cellPadding="4">
           <thead>
@@ -68,8 +75,6 @@ const FacturaImprimible = ({ venta, ivaPorcentaje = 19 }) => {
                 </td>
               </tr>
             ))}
-
-            {/* si no hay items, mostrar fila vacía */}
             {items.length === 0 && (
               <tr>
                 <td colSpan="4" style={{ textAlign: "center", padding: "12px 0" }}>
@@ -81,7 +86,7 @@ const FacturaImprimible = ({ venta, ivaPorcentaje = 19 }) => {
         </table>
       </div>
 
-      {/* === TOTALES === */}
+      {/* === Totales === */}
       <div className="factura-totales">
         <div className="tot-row">
           <div>Subtotal:</div>
@@ -95,17 +100,13 @@ const FacturaImprimible = ({ venta, ivaPorcentaje = 19 }) => {
           <div>TOTAL A PAGAR:</div>
           <div>{FormatoMoneda(total)}</div>
         </div>
-        <div className="small-note">Ganancia Bruta: {FormatoMoneda(venta.total_ganancias ?? 0)}</div>
+        <div className="small-note">
+          Ganancia Bruta: {FormatoMoneda(venta.total_ganancias ?? 0)}
+        </div>
       </div>
 
-      {/* === PIE DE FACTURA === */}
       <div className="factura-footer">
         <div>¡Gracias por su compra!</div>
-      </div>
-
-      {/* Botones (se ocultan al imprimir) */}
-      <div className="factura-actions modal-buttons" style={{ marginTop: 8 }}>
-        {/* Estos botones los maneja el componente padre (Facturacion.jsx) */}
       </div>
     </div>
   );
