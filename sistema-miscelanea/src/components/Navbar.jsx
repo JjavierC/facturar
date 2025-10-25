@@ -1,5 +1,5 @@
 // src/components/Navbar.jsx
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom'; // <-- 1. IMPORTA useNavigate
 import miLogo from './logo.jfif'; 
 
 const LOGO_URL = miLogo;
@@ -7,6 +7,17 @@ const LOGO_URL = miLogo;
 function Navbar() {
   const location = useLocation();
   const isActive = (path) => location.pathname === path;
+
+  const navigate = useNavigate(); // <-- 2. INICIALIZA useNavigate
+  const usuarioLogueado = localStorage.getItem('usuario') || 'Usuario'; // Para el "Hola, ..."
+
+  // --- 3. FUNCIÓN PARA CERRAR SESIÓN ---
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('rol');
+    localStorage.removeItem('usuario');
+    navigate('/login'); // Redirige al login
+  };
 
   // Estilos para los enlaces (así no repetimos código)
   const linkStyle = "hover:text-gray-300";
@@ -29,41 +40,36 @@ function Navbar() {
         </div>
       </Link>
 
-      <div className="flex items-center gap-4 md:gap-8 ml-auto text-xl md:text-[28px] font-normal">
+      {/* Ajuste: Este div ahora contiene tus enlaces Y el botón de logout.
+        Cambié el gap y el tamaño de texto un poco para que todo quepa.
+      */}
+      <div className="flex items-center gap-4 md:gap-6 ml-auto text-lg md:text-[24px] font-normal">
 
-        {/* --- 1. ENLACE NUEVO: Inicio --- */}
+        {/* --- Tus enlaces (sin cambios) --- */}
         <Link 
           to="/" 
           className={isActive('/') ? activeLinkStyle : linkStyle}
         >
           Inicio
         </Link>
-
-        {/* --- 2. ENLACE NUEVO: Clientes --- */}
         <Link 
           to="/clientes" 
           className={isActive('/clientes') ? activeLinkStyle : linkStyle}
         >
           Clientes
         </Link>
-        
-        {/* --- 3. ENLACE EXISTENTE (Ruta actualizada) --- */}
         <Link 
-          to="/facturacion" // <-- CAMBIO: Ya no es "/"
+          to="/facturacion"
           className={isActive('/facturacion') ? activeLinkStyle : linkStyle}
         >
           Facturación
         </Link>
-        
-        {/* --- 4. ENLACE EXISTENTE (Sin cambios) --- */}
         <Link 
           to="/inventario" 
           className={isActive('/inventario') ? activeLinkStyle : linkStyle}
         >
           Productos
         </Link>
-        
-        {/* --- 5. ENLACE EXISTENTE (Sin cambios) --- */}
         <Link 
           to="/reportes" 
           className={isActive('/reportes') ? activeLinkStyle : linkStyle}
@@ -71,6 +77,19 @@ function Navbar() {
           Reportes
         </Link>
 
+        {/* --- 4. COSA DE CERRAR SESIÓN AÑADIDA --- */}
+        <div className="flex items-center gap-3 pl-4">
+          <span className="text-sm text-gray-300 hidden md:block">
+            Hola, {usuarioLogueado}
+          </span>
+          <button
+            onClick={handleLogout}
+            className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg text-sm"
+          >
+            Cerrar Sesión
+          </button>
+        </div>
+        
       </div>
     </nav>
   );
