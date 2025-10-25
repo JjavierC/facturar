@@ -157,84 +157,87 @@ body {
   transform: none !important;
 }
 
-/* ===========================================================
-   AJUSTES DE IMPRESIÓN
-=========================================================== */
-
-
 /* ============================
-   IMPRESIÓN: mostrar SOLO la factura
+   IMPRESIÓN PERFECTA DE FACTURA
    ============================ */
 @media print {
   html, body {
     background: #fff !important;
     margin: 0 !important;
     padding: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
   }
 
-  /* Oculta todo el resto del sitio */
+  /* Ocultar toda la app excepto la factura */
   body * {
     visibility: hidden !important;
   }
 
-  /* Muestra el modal de impresión y su contenido */
+  /* Mostrar solo el modal y su contenido */
   .print-modal-wrapper,
   .print-modal-wrapper * {
     visibility: visible !important;
   }
 
-  /* Centra la factura en la página */
+  /* Asegurar que el modal ocupe toda la página sin recortes */
   .print-modal-wrapper {
-    position: static !important;
-    display: flex !important;
-    align-items: flex-start !important;
-    justify-content: center !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: auto !important;
     background: #fff !important;
+    display: block !important;
+    overflow: visible !important;
     padding: 0 !important;
     margin: 0 !important;
   }
 
-  /* Formato de la factura */
+  /* La factura misma */
   .factura-card {
+    position: relative !important;
     width: 100% !important;
-    max-width: 700px !important;
+    max-width: 800px !important;
     margin: 0 auto !important;
     background: #fff !important;
     color: #000 !important;
     border: 1px solid #000 !important;
+    padding: 15mm !important;
     box-shadow: none !important;
-    padding: 10mm !important;
+    page-break-inside: avoid !important;
   }
 
-  /* Ocultar botones de acción */
+  /* Quitar botones y elementos de UI */
   .modal-buttons,
   .no-print {
     display: none !important;
   }
 
-  /* Quitar efectos visuales */
+  /* Eliminar fondos grises y efectos */
   * {
     box-shadow: none !important;
     text-shadow: none !important;
     background: transparent !important;
   }
 
-  /* Tablas */
+  /* Asegurar tabla visible y sin recortes */
   .factura-table {
     border-collapse: collapse !important;
+    width: 100% !important;
     page-break-inside: avoid !important;
   }
+
   .factura-table th,
   .factura-table td {
     border: 1px solid #000 !important;
     color: #000 !important;
+    padding: 6px !important;
   }
 
-  /* Márgenes de impresión */
+  /* Márgenes de impresión controlados */
   @page {
     size: auto;
     margin: 10mm;
   }
 }
-
-
