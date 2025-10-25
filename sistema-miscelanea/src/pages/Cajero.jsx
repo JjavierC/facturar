@@ -39,7 +39,6 @@ const Cajero = () => {
         <Link
           to="/admin/crear-usuarios"
           title="Crear nuevo usuario"
-          // Como no estás usando Tailwind, te pongo los estilos directo aquí
           style={{
             position: 'fixed', // Se pega a la esquina de la ventana
             bottom: '32px',    // 32px desde abajo
