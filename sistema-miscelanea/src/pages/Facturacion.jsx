@@ -181,7 +181,7 @@ function Facturacion() {
   return (
     // Agregamos la clase "main-ui" para ocultar todo al imprimir
     <div className="p-4 md:p-8 bg-gray-100 min-h-screen main-ui">
-      <h1 className="text-3xl font-bold mb-6 text-gray-800">Punto de Venta (POS)</h1>
+      <h1 className="text-3xl font-bold mb-6 text-gray-800">Punto de Venta </h1>
 
       {/* Sección de Búsqueda */}
       <section className="bg-white p-6 rounded-lg shadow-xl mb-8 max-w-4xl mx-auto relative">

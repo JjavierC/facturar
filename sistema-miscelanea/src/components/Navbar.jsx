@@ -1,3 +1,4 @@
+// src/components/Navbar.jsx
 import { Link, useLocation } from 'react-router-dom';
 import miLogo from './logo.jfif'; 
 
@@ -6,6 +7,10 @@ const LOGO_URL = miLogo;
 function Navbar() {
   const location = useLocation();
   const isActive = (path) => location.pathname === path;
+
+  // Estilos para los enlaces (así no repetimos código)
+  const linkStyle = "hover:text-gray-300";
+  const activeLinkStyle = "text-cyan-300 font-bold";
 
   return (
     <nav
@@ -20,33 +25,52 @@ function Navbar() {
             backgroundColor: !LOGO_URL ? '#ffffff30' : 'transparent'
           }}
         >
-          {!LOGO_URL && (
-            <div className="w-full h-full flex items-center justify-center text-sm md:text-lg font-bold">
-              LOGO
-            </div>
-          )}
+          {/* ... (el logo se queda igual) ... */}
         </div>
       </Link>
 
-      <div className="flex items-center gap-4 md:gap-10 ml-auto text-xl md:text-[32px] font-normal">
+      <div className="flex items-center gap-4 md:gap-8 ml-auto text-xl md:text-[28px] font-normal">
+
+        {/* --- 1. ENLACE NUEVO: Inicio --- */}
         <Link 
           to="/" 
-          className={isActive('/') ? "text-cyan-300 font-bold" : "hover:text-gray-300"}
+          className={isActive('/') ? activeLinkStyle : linkStyle}
+        >
+          Inicio
+        </Link>
+
+        {/* --- 2. ENLACE NUEVO: Clientes --- */}
+        <Link 
+          to="/clientes" 
+          className={isActive('/clientes') ? activeLinkStyle : linkStyle}
+        >
+          Clientes
+        </Link>
+        
+        {/* --- 3. ENLACE EXISTENTE (Ruta actualizada) --- */}
+        <Link 
+          to="/facturacion" // <-- CAMBIO: Ya no es "/"
+          className={isActive('/facturacion') ? activeLinkStyle : linkStyle}
         >
           Facturación
         </Link>
+        
+        {/* --- 4. ENLACE EXISTENTE (Sin cambios) --- */}
         <Link 
           to="/inventario" 
-          className={isActive('/inventario') ? "text-cyan-300 font-bold" : "hover:text-gray-300"}
+          className={isActive('/inventario') ? activeLinkStyle : linkStyle}
         >
           Productos
         </Link>
+        
+        {/* --- 5. ENLACE EXISTENTE (Sin cambios) --- */}
         <Link 
           to="/reportes" 
-          className={isActive('/reportes') ? "text-cyan-300 font-bold" : "hover:text-gray-300"}
+          className={isActive('/reportes') ? activeLinkStyle : linkStyle}
         >
           Reportes
         </Link>
+
       </div>
     </nav>
   );

@@ -48,7 +48,7 @@ const FacturaImprimible = ({ venta, ivaPorcentaje = 19 }) => {
         </div>
         <div>
           <div className="meta-label">Vendedor:</div>
-          <div className="meta-value">Cajero (ejemplo)</div>
+          <div className="meta-value">Cajero </div>
         </div>
       </div>
 
@@ -101,7 +101,6 @@ const FacturaImprimible = ({ venta, ivaPorcentaje = 19 }) => {
           <div>{FormatoMoneda(total)}</div>
         </div>
         <div className="small-note">
-          Ganancia Bruta: {FormatoMoneda(venta.total_ganancias ?? 0)}
         </div>
       </div>
 
