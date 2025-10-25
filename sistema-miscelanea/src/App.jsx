@@ -2,8 +2,8 @@
 import { Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 
-import Cajero from './pages/cajero';       
-import Clientes from './pages/clientes';   
+import Cajero from './pages/Cajero';       
+import Clientes from './pages/Clientes';   
 
 import Facturacion from './pages/Facturacion';
 import Inventario from './pages/Inventario';
