@@ -196,84 +196,85 @@ body {
     margin: 0 !important;
   }
 
-  /* === Tarjeta de la factura === */
+  /* === Tarjeta de la factura (ahora ocupa más espacio a lo largo) === */
   .factura-card {
-    width: 100% !important;
-    max-width: 780px !important;   /* 🔸 Más ancha */
+    width: 95% !important;              /* 🔸 Usa casi todo el ancho */
+    max-width: 1000px !important;       /* 🔸 Más ancha para aprovechar A4 */
     background: #fff !important;
     border: 1px solid #000 !important;
-    padding: 18mm !important;      /* 🔸 Margen interior equilibrado */
+    padding: 20mm 25mm !important;      /* 🔸 Más alto que ancho */
     color: #000 !important;
     font-family: "Inter", Arial, sans-serif !important;
-    font-size: 13.5px !important;
+    font-size: 14px !important;
     line-height: 1.45 !important;
     box-shadow: none !important;
     page-break-inside: avoid !important;
   }
 
-  /* === Encabezado === */
+  /* === Título === */
   .factura-title {
     text-align: center !important;
-    font-size: 22px !important;
+    font-size: 24px !important;
     font-weight: 800 !important;
-    margin-bottom: 12px !important;
-    letter-spacing: 0.4px !important;
+    margin-bottom: 16px !important;
+    letter-spacing: 0.5px !important;
     border-bottom: 2px solid #000 !important;
-    padding-bottom: 4px !important;
+    padding-bottom: 5px !important;
   }
 
+  /* === Datos principales === */
   .factura-meta {
     display: grid !important;
     grid-template-columns: repeat(3, 1fr) !important;
-    gap: 6px !important;
-    margin-bottom: 16px !important;
+    gap: 10px !important;
+    margin-bottom: 18px !important;
   }
-  .meta-label { font-weight: 700 !important; font-size: 12.5px !important; }
-  .meta-value { font-size: 13px !important; }
+  .meta-label { font-weight: 700 !important; font-size: 13px !important; }
+  .meta-value { font-size: 14px !important; }
 
-  /* === Tabla === */
+  /* === Tabla de productos === */
   .factura-table {
     width: 100% !important;
     border-collapse: collapse !important;
-    margin-top: 10px !important;
+    margin-top: 14px !important;
   }
   .factura-table th,
   .factura-table td {
-    border: 1px solid #333 !important;
+    border: 1px solid #444 !important;
     text-align: center !important;
-    padding: 7px 6px !important;
-    font-size: 13px !important;
+    padding: 8px 6px !important;
+    font-size: 13.5px !important;
   }
   .factura-table th {
-    background: #f2f2f2 !important;
+    background: #f3f3f3 !important;
     font-weight: 700 !important;
   }
 
   /* === Totales === */
   .factura-totales {
-    margin-top: 14px !important;
+    margin-top: 18px !important;
     border-top: 1px solid #444 !important;
     padding-top: 10px !important;
   }
   .tot-row {
     display: flex !important;
     justify-content: space-between !important;
-    margin: 3px 0 !important;
+    margin: 4px 0 !important;
   }
   .total-final {
     font-weight: 900 !important;
     font-size: 15px !important;
     border-top: 2px solid #000 !important;
-    padding-top: 6px !important;
+    padding-top: 8px !important;
   }
 
   /* === Pie === */
   .factura-footer {
     text-align: center !important;
-    font-size: 13px !important;
-    margin-top: 18px !important;
+    font-size: 13.5px !important;
+    margin-top: 24px !important;
     border-top: 1px dashed #aaa !important;
-    padding-top: 6px !important;
+    padding-top: 8px !important;
   }
 
   /* === Ocultar botones e interfaz === */
@@ -281,15 +282,16 @@ body {
     display: none !important;
   }
 
-  /* === Limpieza de efectos === */
+  /* === Limpieza visual === */
   * {
     box-shadow: none !important;
     text-shadow: none !important;
   }
 
-  /* === Configuración del papel === */
+  /* === Configuración del papel (más aprovechado) === */
   @page {
     size: A4;
-    margin: 10mm 15mm;
+    margin: 5mm 10mm;  /* 🔸 Márgenes más pequeños para usar toda la hoja */
   }
 }
+
