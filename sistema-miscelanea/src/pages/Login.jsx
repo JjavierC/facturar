@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import miLogo from '../logo.jfif'; // Importa tu logo (ajusta la ruta si es necesario)
+import miLogo from '../components/logo.jfif'; // Importa tu logo (ajusta la ruta si es necesario)
 
 function Login() {
   const [usuario, setUsuario] = useState('');
