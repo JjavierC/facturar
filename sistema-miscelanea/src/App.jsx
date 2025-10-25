@@ -11,11 +11,9 @@ import Reportes from './pages/Reportes';
 
 function App() {
   return (
-    // CAMBIO: Quité el 'p-6' para que el panel Cajero ocupe toda la pantalla
     <div className="min-h-screen bg-gray-50">
       <Navbar /> 
       
-      {/* CAMBIO: No usamos <main> para que cada página controle su padding */}
       <Routes>
         {/* --- (RUTAS ACTUALIZADAS) --- */}
         
