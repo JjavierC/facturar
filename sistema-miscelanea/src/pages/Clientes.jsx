@@ -11,10 +11,11 @@ function Clientes() {
     cedula: '',
   });
   
-  const [loading, setLoading] = useState(true); // Empezamos en true
-  const [mensaje, setMensaje] = useState(null);
+  // --- NUEVO: Estado para saber qué cliente está seleccionado ---
+  const [clienteSeleccionado, setClienteSeleccionado] = useState(null); 
   
-
+  const [loading, setLoading] = useState(true);
+  const [mensaje, setMensaje] = useState(null);
   const [recargar, setRecargar] = useState(0);
 
   // --- 1. LEER CLIENTES DE LA API ---
@@ -22,8 +23,7 @@ function Clientes() {
     const cargarClientes = async () => {
       try {
         setLoading(true);
-        setMensaje(null);
-        // Esta es la llamada real a la API que creamos
+        // No limpiamos el mensaje aquí para que duren
         const res = await axios.get('/.netlify/functions/get-clientes');
         setClientes(res.data);
       } catch (err) {
@@ -32,16 +32,40 @@ function Clientes() {
         setLoading(false);
       }
     };
-    
     cargarClientes();
-  }, [recargar]); // Se ejecuta al inicio y cada vez que 'recargar' cambia
+  }, [recargar]);
 
   
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // --- 2. GUARDAR CLIENTE EN LA API ---
+  // --- NUEVO: Función para limpiar el formulario y la selección ---
+  const limpiarFormulario = () => {
+    setClienteSeleccionado(null);
+    setFormData({ nombre: '', apellido: '', cedula: '' });
+    setMensaje(null);
+  };
+
+  // --- NUEVO: Función para seleccionar un cliente de la tabla ---
+  const handleSelectCliente = (cliente) => {
+    if (loading) return; // No hacer nada si está cargando
+    
+    // Si se hace clic en el mismo cliente, se deselecciona
+    if (clienteSeleccionado && clienteSeleccionado._id === cliente._id) {
+      limpiarFormulario();
+    } else {
+      setClienteSeleccionado(cliente);
+      setFormData({
+        nombre: cliente.nombre,
+        apellido: cliente.apellido,
+        cedula: cliente.cedula,
+      });
+      setMensaje(null); // Limpia mensajes al seleccionar
+    }
+  };
+
+  // --- 2. GUARDAR CLIENTE EN LA API (Registrar) ---
   const handleRegistrar = async (e) => {
     e.preventDefault();
     setMensaje(null);
@@ -49,22 +73,62 @@ function Clientes() {
       setMensaje({ type: 'error', text: 'Todos los campos son obligatorios.' });
       return;
     }
+    
+    if (clienteSeleccionado) {
+      setMensaje({ type: 'error', text: 'Cliente seleccionado. Use "Actualizar" o "Limpiar".' });
+      return;
+    }
 
     try {
-      setLoading(true); // Mostramos que está "guardando"
-      
-      // Esta es la llamada POST a la API que creamos
+      setLoading(true); 
       await axios.post('/.netlify/functions/add-cliente', formData);
-
       setMensaje({ type: 'success', text: `Cliente "${formData.nombre}" registrado.` });
-      setFormData({ nombre: '', apellido: '', cedula: '' }); // Limpiamos el formulario
-      setRecargar(prev => prev + 1); // Forzamos a recargar la lista de clientes
-      
+      limpiarFormulario(); // Limpiamos
+      setRecargar(prev => prev + 1); // Recargamos la tabla
     } catch (error) {
       setMensaje({ type: 'error', text: 'Error al guardar el cliente.' });
       setLoading(false);
     }
-    // No ponemos finally(setLoading(false)) porque el useEffect ya lo hará
+  };
+
+  // --- 3. NUEVO: Función para ACTUALIZAR ---
+  const handleActualizar = async () => {
+    if (!clienteSeleccionado) return; // No hacer nada si no hay selección
+
+    setMensaje(null);
+    setLoading(true);
+    try {
+      // Llamamos a la nueva API (PUT)
+      await axios.put(`/.netlify/functions/update-cliente?id=${clienteSeleccionado._id}`, formData);
+      setMensaje({ type: 'success', text: `Cliente "${formData.nombre}" actualizado.` });
+      limpiarFormulario();
+      setRecargar(prev => prev + 1);
+    } catch (error) {
+      setMensaje({ type: 'error', text: 'Error al actualizar el cliente.' });
+      setLoading(false);
+    }
+  };
+
+  // --- 4. NUEVO: Función para ELIMINAR ---
+  const handleEliminar = async () => {
+    if (!clienteSeleccionado) return;
+
+    if (!window.confirm(`¿Seguro que quieres eliminar a ${clienteSeleccionado.nombre} ${clienteSeleccionado.apellido}?`)) {
+      return;
+    }
+
+    setMensaje(null);
+    setLoading(true);
+    try {
+      // Llamamos a la nueva API (DELETE)
+      await axios.delete(`/.netlify/functions/delete-cliente?id=${clienteSeleccionado._id}`);
+      setMensaje({ type: 'success', text: 'Cliente eliminado.' });
+      limpiarFormulario();
+      setRecargar(prev => prev + 1);
+    } catch (error) {
+      setMensaje({ type: 'error', text: 'Error al eliminar el cliente.' });
+      setLoading(false);
+    }
   };
   
   return (
@@ -73,69 +137,77 @@ function Clientes() {
         REGISTRAR CLIENTE
       </h1>
 
-      {/* Formulario de Registro */}
       <form 
-        onSubmit={handleRegistrar} 
+        onSubmit={handleRegistrar} // El submit del form sigue siendo "Registrar"
         className="max-w-4xl mx-auto bg-gray-50 p-6 rounded-lg shadow-md border border-gray-200 mb-10"
       >
-        {/* ... (el formulario sigue igual que antes) ... */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
             <input
-              type="text"
-              name="nombre"
-              value={formData.nombre}
-              onChange={handleChange}
+              type="text" name="nombre" value={formData.nombre} onChange={handleChange}
               className="w-full p-2 border border-gray-300 rounded-md"
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Apellido</label>
             <input
-              type="text"
-              name="apellido"
-              value={formData.apellido}
-              onChange={handleChange}
+              type="text" name="apellido" value={formData.apellido} onChange={handleChange}
               className="w-full p-2 border border-gray-300 rounded-md"
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Cédula</label>
             <input
-              type="text"
-              name="cedula"
-              value={formData.cedula}
-              onChange={handleChange}
+              type="text" name="cedula" value={formData.cedula} onChange={handleChange}
               className="w-full p-2 border border-gray-300 rounded-md"
             />
           </div>
         </div>
         
-        <div className="flex items-center justify-center gap-4 mt-6">
+        {/* --- CAMBIO: Botones con nueva lógica --- */}
+        <div className="flex flex-wrap items-center justify-center gap-4 mt-6">
           <button 
-            type="submit" 
-            disabled={loading} // Deshabilitamos el botón si está cargando
+            type="submit" // Botón de Registrar (usa el onSubmit del form)
+            disabled={loading || !!clienteSeleccionado} // Desactivado si carga o si hay selección
             className="px-6 py-2 bg-[#350BF3] text-white rounded-md font-semibold hover:bg-blue-700 disabled:opacity-50"
           >
-            {loading ? 'Guardando...' : 'Registrar'}
+            {loading && !clienteSeleccionado ? 'Guardando...' : 'Registrar'}
           </button>
+          
           <button 
-            type="button" 
-            className="px-6 py-2 bg-yellow-500 text-white rounded-md font-semibold hover:bg-yellow-600"
+            type="button" // Es tipo "button" para no disparar el onSubmit
+            onClick={handleActualizar} // Llama a la función de actualizar
+            disabled={loading || !clienteSeleccionado} // Desactivado si carga o si NO hay selección
+            className="px-6 py-2 bg-yellow-500 text-white rounded-md font-semibold hover:bg-yellow-600 disabled:opacity-50"
           >
-            Actualizar
+            {loading && !!clienteSeleccionado ? 'Actualizando...' : 'Actualizar'}
           </button>
+          
           <button 
             type="button" 
-            className="px-6 py-2 bg-red-500 text-white rounded-md font-semibold hover:bg-red-600"
+            onClick={handleEliminar}
+            disabled={loading || !clienteSeleccionado} // Desactivado si carga o si NO hay selección
+            className="px-6 py-2 bg-red-500 text-white rounded-md font-semibold hover:bg-red-600 disabled:opacity-50"
           >
             Eliminar
           </button>
+          
+          {/* --- NUEVO: Botón para limpiar --- */}
+          {/* Se muestra solo si hay un cliente seleccionado */}
+          {clienteSeleccionado && (
+            <button 
+              type="button" 
+              onClick={limpiarFormulario}
+              disabled={loading}
+              className="px-6 py-2 bg-gray-500 text-white rounded-md font-semibold hover:bg-gray-600"
+            >
+              Limpiar / Cancelar
+            </button>
+          )}
         </div>
       </form>
 
-      {/* Mensaje de feedback */}
       {mensaje && (
         <div 
           className={`max-w-4xl mx-auto text-center p-3 rounded-md mb-8 ${
@@ -146,10 +218,13 @@ function Clientes() {
         </div>
       )}
 
-      {/* Tabla de Clientes */}
+      <h2 className="text-xl font-semibold text-center text-gray-700 mb-4">
+        Lista de Clientes (Haz clic para seleccionar)
+      </h2>
+      
+      {/* --- CAMBIO: Tabla de Clientes (ahora seleccionable) --- */}
       <div className="max-w-6xl mx-auto overflow-x-auto shadow-lg">
         <table className="w-full border-collapse border border-black">
-          {/* ... (el <thead> sigue igual) ... */}
           <thead>
             <tr className="bg-gray-100 h-[55px]">
               <th className="border border-black p-2 text-xl font-medium">ID</th>
@@ -171,9 +246,17 @@ function Clientes() {
               </tr>
             )}
             
-            {/* AHORA MOSTRAMOS LOS DATOS REALES DE LA API */}
             {!loading && clientes.map((cliente) => (
-              <tr key={cliente._id} className="h-[60px] even:bg-white odd:bg-gray-50 text-center">
+              <tr 
+                key={cliente._id} 
+                // --- NUEVO: onClick para seleccionar y estilo de fondo ---
+                onClick={() => handleSelectCliente(cliente)}
+                className={`h-[60px] text-center cursor-pointer ${
+                  clienteSeleccionado?._id === cliente._id 
+                    ? 'bg-blue-200 hover:bg-blue-300' // Fila seleccionada
+                    : 'even:bg-white odd:bg-gray-50 hover:bg-gray-100' // Fila normal
+                }`}
+              >
                 <td className="border border-black p-2 text-lg">{cliente._id.slice(-6)}</td>
                 <td className="border border-black p-2 text-lg capitalize">{cliente.nombre}</td>
                 <td className="border border-black p-2 text-lg capitalize">{cliente.apellido}</td>
@@ -183,7 +266,6 @@ function Clientes() {
           </tbody>
         </table>
       </div>
-
     </div>
   );
 }
