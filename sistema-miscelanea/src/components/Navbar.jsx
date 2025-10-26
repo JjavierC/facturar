@@ -1,95 +1,103 @@
 // src/components/Navbar.jsx
-import { Link, useLocation, useNavigate } from 'react-router-dom'; // <-- 1. IMPORTA useNavigate
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import miLogo from './logo.jfif'; 
+// 1. Importa el ícono para "Cerrar Sesión"
+import { LogOut } from 'lucide-react'; 
 
 const LOGO_URL = miLogo;
 
+// 2. Componente de Enlace (para no repetir código)
+function NavLink({ to, children, isActive }) {
+  return (
+    <Link
+      to={to}
+      className={`px-3 py-2 rounded-md text-sm font-medium transition-colors
+        ${
+          isActive
+            ? 'bg-gray-100 text-blue-600' // Estilo Activo
+            : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900' // Estilo Inactivo
+        }
+      `}
+    >
+      {children}
+    </Link>
+  );
+}
+
 function Navbar() {
   const location = useLocation();
-  const isActive = (path) => location.pathname === path;
+  const navigate = useNavigate();
+  
+  const usuarioLogueado = localStorage.getItem('usuario') || 'Usuario';
+  const rolUsuario = localStorage.getItem('rol');
 
-  const navigate = useNavigate(); // <-- 2. INICIALIZA useNavigate
-  const usuarioLogueado = localStorage.getItem('usuario') || 'Usuario'; // Para el "Hola, ..."
-
-  // --- 3. FUNCIÓN PARA CERRAR SESIÓN ---
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('rol');
     localStorage.removeItem('usuario');
-    navigate('/login'); // Redirige al login
+    navigate('/login');
   };
-
-  // Estilos para los enlaces (así no repetimos código)
-  const linkStyle = "hover:text-gray-300";
-  const activeLinkStyle = "text-cyan-300 font-bold";
 
   return (
     <nav
-      className="w-full h-[96px] bg-[#350BF3] text-white flex items-center px-4 md:px-14 border-b border-black print:hidden"
+      // 3. CAMBIOS DE DISEÑO PRINCIPALES:
+      // - Fondo blanco, altura 64px (h-16), sombra sutil
+      className="w-full h-16 bg-white shadow-md flex items-center px-4 md:px-6 print:hidden"
       style={{ fontFamily: 'Inter, sans-serif' }}
     >
-      <Link to="/">
-        <div
-          className="w-[100px] h-[68px] md:w-[120px] rounded-[20px] border border-black bg-cover bg-center"
-          style={{ 
-            backgroundImage: `url(${LOGO_URL})`,
-            backgroundColor: !LOGO_URL ? '#ffffff30' : 'transparent'
-          }}
-        >
-          {/* ... (el logo se queda igual) ... */}
-        </div>
+      {/* 4. LOGO (más pequeño y sin borde) */}
+      <Link to="/" className="flex-shrink-0 flex items-center">
+        <img
+          className="h-10 w-auto" // Logo más pequeño
+          src={LOGO_URL}
+          alt="Miscelánea La Económica"
+        />
       </Link>
 
-      {/* Ajuste: Este div ahora contiene tus enlaces Y el botón de logout.
-        Cambié el gap y el tamaño de texto un poco para que todo quepa.
-      */}
-      <div className="flex items-center gap-4 md:gap-6 ml-auto text-lg md:text-[24px] font-normal">
-
-        {/* --- Tus enlaces (sin cambios) --- */}
-        <Link 
-          to="/" 
-          className={isActive('/') ? activeLinkStyle : linkStyle}
-        >
+      {/* 5. ENLACES (después del logo, con el nuevo estilo) */}
+      <div className="hidden md:flex items-center gap-2 ml-6">
+        <NavLink to="/" isActive={location.pathname === '/'}>
           Inicio
-        </Link>
-        <Link 
-          to="/clientes" 
-          className={isActive('/clientes') ? activeLinkStyle : linkStyle}
-        >
-          Clientes
-        </Link>
-        <Link 
-          to="/facturacion"
-          className={isActive('/facturacion') ? activeLinkStyle : linkStyle}
-        >
-          Facturación
-        </Link>
-        <Link 
-          to="/inventario" 
-          className={isActive('/inventario') ? activeLinkStyle : linkStyle}
-        >
-          Productos
-        </Link>
-        <Link 
-          to="/reportes" 
-          className={isActive('/reportes') ? activeLinkStyle : linkStyle}
-        >
-          Reportes
-        </Link>
-
-        {/* --- 4. COSA DE CERRAR SESIÓN AÑADIDA --- */}
-        <div className="flex items-center gap-3 pl-4">
-          <span className="text-sm text-gray-300 hidden md:block">
-            Hola, {usuarioLogueado}
-          </span>
-          <button
-            onClick={handleLogout}
-            className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg text-sm"
-          >
-            Cerrar Sesión
-          </button>
-        </div>
+        </NavLink>
         
+        {/* Enlace de Admin (como lo teníamos antes) */}
+        {rolUsuario === 'administrador' && (
+          <NavLink 
+            to="/admin/crear-usuarios" 
+            isActive={location.pathname === '/admin/crear-usuarios'}
+          >
+            Usuarios
+          </NavLink>
+        )}
+        
+        <NavLink to="/clientes" isActive={location.pathname === '/clientes'}>
+          Clientes
+        </NavLink>
+        <NavLink to="/facturacion" isActive={location.pathname === '/facturacion'}>
+          Facturación
+        </NavLink>
+        <NavLink to="/inventario" isActive={location.pathname === '/inventario'}>
+          Productos
+        </NavLink>
+        <NavLink to="/reportes" isActive={location.pathname === '/reportes'}>
+          Reportes
+        </NavLink>
+      </div>
+
+      {/* 6. MENÚ DE USUARIO (a la derecha, limpio) */}
+      <div className="ml-auto flex items-center gap-4">
+        <span className="text-sm font-medium text-gray-700 hidden md:block">
+          Hola, {usuarioLogueado}
+        </span>
+        
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-2 text-sm font-medium text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-md transition-colors"
+          title="Cerrar Sesión"
+        >
+          <LogOut className="h-4 w-4" />
+          <span className="hidden md:block">Cerrar Sesión</span>
+        </button>
       </div>
     </nav>
   );
