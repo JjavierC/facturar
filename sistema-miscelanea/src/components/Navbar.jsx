@@ -83,14 +83,14 @@ function Navbar() {
           Hola, {usuarioLogueado}
         </span>
         
-        <button
-          onClick={handleLogout}
-          className="navbar-clean-logout-button"
-          title="Cerrar Sesión"
-        >
-          {/* Quitamos el ícono para no depender de más librerías */}
-          Cerrar Sesión
-        </button>
+<button
+  onClick={handleLogout}
+  className="navbar-clean-logout-button"
+  title="Cerrar Sesión"
+>
+  <span className="logout-text">Cerrar Sesión</span>
+</button>
+
       </div>
     </nav>
   );

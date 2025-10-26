@@ -594,3 +594,93 @@ body {
   color: #dc2626; /* hover:text-red-700 */
   background-color: #fef2f2; /* hover:bg-red-50 */
 }
+/* ---------- Mejora responsiva para el menú de usuario y logout ---------- */
+
+/* Permite que el menú de usuario se reduzca sin forzar overflow */
+.navbar-clean-user-menu {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;           /* importante para permitir truncamiento */
+}
+
+/* Evita que el nombre de usuario provoque overflow */
+.navbar-clean-user-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;       /* ajústalo si querés más/menos espacio */
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Botón de logout: no debe salirse y se trunca si hace falta */
+.navbar-clean-logout-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #ef4444;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  transition: all 0.2s;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+
+  white-space: nowrap;    /* evita quiebres de línea */
+  overflow: hidden;       /* necesario para text-overflow */
+  text-overflow: ellipsis;
+  max-width: 160px;       /* límite para que no se salga */
+  min-width: 0;           /* clave cuando el contenedor tiene flex */
+}
+
+/* El texto interno del botón (para poder ocultarlo en mobile) */
+.logout-text {
+  display: inline-block;
+  vertical-align: middle;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+/* Ajustes de diseño cuando el espacio es muy pequeño */
+@media (max-width: 480px) {
+  /* Ocultamos el nombre de usuario (ya lo mostraste en pantallas más grandes) */
+  .navbar-clean-user-text {
+    display: none;
+  }
+
+  /* Ocultamos el texto largo del botón y mostramos un icono unicode */
+  .logout-text {
+    display: none;
+  }
+
+  .navbar-clean-logout-button {
+    padding: 0.35rem 0.45rem;
+    font-size: 0.9rem;
+    max-width: 40px;      /* lo deja pequeño y evita overflow */
+    border-radius: 0.35rem;
+  }
+
+  /* icono simple antes del botón (no requiere librerías) */
+  .navbar-clean-logout-button::before {
+    content: "⎋";         /* unicode pequeño para "salir" — cámbialo si querés */
+    display: inline-block;
+    margin-right: 0;
+    font-size: 1.05rem;
+    line-height: 1;
+  }
+}
+
+/* Cuando la navbar tenga menos espacio, permitimos que los elementos se encogen */
+.navbar-clean-logo-link,
+.navbar-clean-links,
+.navbar-clean-user-menu {
+  min-width: 0;
+}
+
+
