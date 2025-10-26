@@ -488,3 +488,108 @@ body {
   text-align: center;
   font-weight: 600; /* font-semibold */
 }
+/* ===========================================================
+   ¡NUEVO! - ESTILOS NAVBAR LIMPIO (CSS PURO)
+=========================================================== */
+
+/* Contenedor principal del Navbar */
+.navbar-clean-container {
+  width: 100%;
+  height: 64px; /* h-16 */
+  background-color: #ffffff; /* bg-white */
+  /* shadow-md */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  padding-left: 1.5rem; /* px-6 */
+  padding-right: 1.5rem; /* px-6 */
+  font-family: "Inter", sans-serif;
+}
+@media (max-width: 768px) {
+  .navbar-clean-container {
+    padding-left: 1rem; /* px-4 */
+    padding-right: 1rem; /* px-4 */
+  }
+}
+
+/* Logo */
+.navbar-clean-logo-link {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+.navbar-clean-logo-img {
+  height: 40px; /* h-10 */
+  width: auto;
+}
+
+/* Contenedor de enlaces */
+.navbar-clean-links {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem; /* gap-2 */
+  margin-left: 1.5rem; /* ml-6 */
+}
+@media (max-width: 768px) {
+  /* En pantallas pequeñas, oculta los links (se puede mejorar luego) */
+  .navbar-clean-links {
+    display: none;
+  }
+}
+
+/* Enlaces individuales */
+.navbar-clean-link {
+  padding: 0.5rem 0.75rem; /* px-3 py-2 */
+  border-radius: 0.375rem; /* rounded-md */
+  font-size: 0.875rem; /* text-sm */
+  font-weight: 500; /* font-medium */
+  text-decoration: none;
+  transition: all 0.2s;
+  color: #6b7280; /* text-gray-500 */
+}
+.navbar-clean-link:hover {
+  background-color: #f9fafb; /* hover:bg-gray-50 */
+  color: #111827; /* hover:text-gray-900 */
+}
+.navbar-clean-link-active {
+  background-color: #f3f4f6; /* bg-gray-100 */
+  color: #2563eb; /* text-blue-600 */
+}
+
+/* Menú de usuario (derecha) */
+.navbar-clean-user-menu {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 1rem; /* gap-4 */
+}
+.navbar-clean-user-text {
+  font-size: 0.875rem; /* text-sm */
+  font-weight: 500; /* font-medium */
+  color: #374151; /* text-gray-700 */
+}
+@media (max-width: 768px) {
+  .navbar-clean-user-text {
+    display: none; /* hidden md:block */
+  }
+}
+
+/* Botón de cerrar sesión */
+.navbar-clean-logout-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem; /* gap-2 */
+  font-size: 0.875rem; /* text-sm */
+  font-weight: 500; /* font-medium */
+  color: #ef4444; /* text-red-500 */
+  padding: 0.5rem; /* p-2 */
+  border-radius: 0.375rem; /* rounded-md */
+  transition: all 0.2s;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+}
+.navbar-clean-logout-button:hover {
+  color: #dc2626; /* hover:text-red-700 */
+  background-color: #fef2f2; /* hover:bg-red-50 */
+}
