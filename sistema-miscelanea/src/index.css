@@ -560,6 +560,7 @@ body {
 .navbar-clean-user-menu {
   margin-left: auto;
   display: flex;
+  margin-left: auto;
   align-items: center;
   gap: 1rem; /* gap-4 */
 }
