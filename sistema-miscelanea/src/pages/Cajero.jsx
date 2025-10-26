@@ -24,12 +24,12 @@ const Cajero = () => {
 
         <Link to="/reportes" className="cajero-card">
           <FaFileInvoiceDollar className="cajero-icon" />
-          <span>REPORTES</span>
+          <span>FACTURAS</span>
         </Link>
 
         <Link to="/facturacion" className="cajero-card">
-          <CiShoppingCart className="cajero-icon" />
-          <span>AREA DE VENTA</span>
+          <FaDollarSign className="cajero-icon" />
+          <span>VENTAS</span>
         </Link>
    </div>
 
