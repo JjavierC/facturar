@@ -1,5 +1,5 @@
 // netlify/functions/update-cliente.js
-const { MongoClient, ObjectId } = require("mongodb"); // Importa ObjectId
+const { MongoClient, ObjectId } = require("mongodb"); // ¡Importa ObjectId!
 const MONGODB_URI = process.env.MONGODB_URI;
 
 exports.handler = async (event) => {
@@ -12,7 +12,7 @@ exports.handler = async (event) => {
   try {
     const clienteData = JSON.parse(event.body || "{}");
     
-    // El ID vendrá en la URL, ej: /update-cliente?id=12345
+    // El ID viene en la URL, ej: /update-cliente?id=12345
     const clienteId = event.queryStringParameters.id; 
 
     if (!clienteId) {
@@ -27,12 +27,17 @@ exports.handler = async (event) => {
       };
     }
 
-    client = new MongoClient(MONGODB_URI);
+    client = new MongoClient(MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000,
+    });
     await client.connect();
     const db = client.db('miscelanea');
     const clientesCollection = db.collection('clientes');
 
-    const filter = { _id: ObjectId(clienteId) }; // Filtro para encontrarlo
+    // ¡CRÍTICO! Necesitas convertir el ID de string a ObjectId
+    const filter = { _id: ObjectId(clienteId) }; 
     
     // Documento con los campos a actualizar
     const updateDoc = {
@@ -40,6 +45,7 @@ exports.handler = async (event) => {
         nombre: clienteData.nombre,
         apellido: clienteData.apellido,
         cedula: clienteData.cedula,
+        // No tocamos el campo 'activo'
       },
     };
 
@@ -56,7 +62,7 @@ exports.handler = async (event) => {
     };
   } catch (error) {
     console.error('Error en update-cliente:', error);
-    return { statusCode: 500, body: JSON.stringify({ error: 'Fallo interno al actualizar el cliente.' }) };
+    return { statusCode: 500, body: JSON.stringify({ error: 'Fallo interno al actualizar el cliente.', details: error.message }) };
   } finally {
     if (client) {
       try { await client.close(); } catch (_) {}

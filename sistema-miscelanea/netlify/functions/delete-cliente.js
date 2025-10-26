@@ -1,5 +1,5 @@
 // netlify/functions/delete-cliente.js
-const { MongoClient, ObjectId } = require("mongodb");
+const { MongoClient, ObjectId } = require("mongodb"); // ¡Importa ObjectId!
 const MONGODB_URI = process.env.MONGODB_URI;
 
 exports.handler = async (event) => {
@@ -9,17 +9,23 @@ exports.handler = async (event) => {
 
   let client;
   try {
+    // El ID viene en la URL
     const clienteId = event.queryStringParameters.id; 
 
     if (!clienteId) {
       return { statusCode: 400, body: JSON.stringify({ message: "Falta el ID del cliente." }) };
     }
 
-    client = new MongoClient(MONGODB_URI);
+    client = new MongoClient(MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000,
+    });
     await client.connect();
     const db = client.db('miscelanea');
     const clientesCollection = db.collection('clientes');
 
+    // ¡CRÍTICO! Convertir el ID a ObjectId
     const filter = { _id: ObjectId(clienteId) };
 
     // --- Borrado Lógico (Recomendado) ---
@@ -43,7 +49,7 @@ exports.handler = async (event) => {
     };
   } catch (error) {
     console.error('Error en delete-cliente:', error);
-    return { statusCode: 500, body: JSON.stringify({ error: 'Fallo interno al eliminar el cliente.' }) };
+    return { statusCode: 500, body: JSON.stringify({ error: 'Fallo interno al eliminar el cliente.', details: error.message }) };
   } finally {
     if (client) {
       try { await client.close(); } catch (_) {}
