@@ -28,7 +28,7 @@ const Cajero = () => {
         </Link>
 
         <Link to="/facturacion" className="cajero-card">
-          <FaCartPlus className="cajero-icon" />
+          <FaDollarSign className="cajero-icon" />
           <span> AREA DE VENTA</span>
         </Link>
    </div>
