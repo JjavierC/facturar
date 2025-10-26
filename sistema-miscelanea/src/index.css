@@ -596,3 +596,11 @@ body {
   color: #dc2626; /* hover:text-red-700 */
   background-color: #fef2f2; /* hover:bg-red-50 */
 }
+.navbar-clean-user-menu {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-right: 1rem; /* opcional: separa del borde derecho */
+  transform: translateX(-12px); /* mueve todo el bloque a la izquierda */
+}
+
