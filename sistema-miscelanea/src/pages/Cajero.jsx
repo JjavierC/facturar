@@ -24,12 +24,12 @@ const Cajero = () => {
 
         <Link to="/reportes" className="cajero-card">
           <FaFileInvoiceDollar className="cajero-icon" />
-          <span>FACTURAS</span>
+          <span>REPORTES</span>
         </Link>
 
         <Link to="/facturacion" className="cajero-card">
-          <FaDollarSign className="cajero-icon" />
-          <span>VENTAS</span>
+          <FaCartPlus className="cajero-icon" />
+          <span> AREA DE VENTA</span>
         </Link>
    </div>
 
