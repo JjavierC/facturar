@@ -604,48 +604,58 @@ body {
   transform: translateX(-12px); /* mueve todo el bloque a la izquierda */
 }
 
-/* =========================================================
-   Mejora de layout para pantalla (NO afecta impresión)
-   ========================================================= */
-@media screen {
-  /* Contenedor general centrado */
-  .app-shell {
-    width: 100%;
-    max-width: 1100px; /* Ajusta a gusto: 900, 1000, etc. */
-    margin-left: auto;
-    margin-right: auto;
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-
-  /* Caja de factura visual (limita ancho y centra) */
-  .factura-card {
-    width: 100% !important;
-    max-width: 920px !important;
-    margin: 0 auto !important;
-    background-color: #ffffff;
-    border-radius: 12px !important;
-    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
-    overflow: hidden;
-  }
-
-  /* Espaciado general */
-  .main-ui {
-    padding-top: 2rem;
-    padding-bottom: 2rem;
-  }
-
-  /* Evita que inputs o tablas se peguen a los bordes */
-  .content-limited {
-    max-width: 920px;
-    margin: 0 auto;
-    padding: 1rem;
-  }
+/* === Diseño cómodo y centrado solo para la vista (no impresión) === */
+body {
+  background-color: #f4f4f5; /* fondo gris claro, elegante */
+  font-family: 'Inter', sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  margin: 0;
+  padding: 20px;
 }
 
-/* Evita que ciertos elementos aparezcan al imprimir */
+/* Contenedor principal del contenido de la factura */
+#root > div {
+  background-color: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  padding: 24px;
+  max-width: 900px; /* controla el ancho visible */
+  width: 100%;
+  min-height: 90vh;
+  overflow: auto;
+}
+
+/* Scroll agradable y redondeado */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
+
+/* --- Muy importante --- */
+/* Asegura que la vista de impresión no cambie */
 @media print {
-  .no-print {
-    display: none !important;
+  body {
+    display: block;
+    background: white;
+    padding: 0;
+  }
+
+  #root > div {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
   }
 }
