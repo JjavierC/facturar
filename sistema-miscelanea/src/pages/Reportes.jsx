@@ -52,8 +52,8 @@ function Reportes() {
     // CAMBIO: Quitado el ancho fijo. Ahora es responsive.
     <div className="w-full min-h-[982px] bg-white mx-auto p-4 md:p-8" style={figmaFont}>
       
-      {/* Header "VENTAS" (Figma) */}
-      <header className="w-full max-w-[1456px] mx-auto h-[58px] bg-[#0BBEFF] rounded-lg flex justify-center items-center">
+      {}
+      <header className="w-full max-w-[1456px] mx-auto h-[58px] bg-[#fcfcfc] rounded-lg flex justify-center items-center">
         <h1 className="text-3xl md:text-4xl font-normal text-white">
           VENTAS
         </h1>
