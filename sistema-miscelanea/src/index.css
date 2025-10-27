@@ -604,67 +604,69 @@ body {
   transform: translateX(-12px); /* mueve todo el bloque a la izquierda */
 }
 
-/* === Diseño cómodo y centrado solo para la vista (no impresión) === */
-body {
+/* === Diseño limpio sin doble scroll, centrado y cómodo === */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
   background-color: #f4f4f5;
   font-family: 'Inter', sans-serif;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  height: 100vh; /* ocupa toda la altura visible */
-  margin: 0;
-  padding: 20px;
-  overflow: hidden; /* 🚫 elimina el scroll del body */
+  overflow-y: auto; /* ✅ un solo scroll global */
+  overflow-x: hidden;
 }
 
-
+/* Contenedor raíz de React */
 #root {
-  flex: 1;
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  overflow: hidden; /* evita doble scroll */
+  min-height: 100vh; /* ocupa toda la altura visible */
+  padding: 20px;
+  box-sizing: border-box;
 }
 
+/* Contenedor visual de tu aplicación */
 #root > div {
   background-color: white;
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   padding: 24px;
-  max-width: 1000px; /* controla ancho visible */
+  max-width: 1000px; /* puedes ajustar el ancho aquí */
   width: 100%;
-  height: calc(100vh - 40px); /* 🔥 ajusta a la altura real visible */
-  overflow-y: auto; /* ✅ scroll solo dentro del contenido si hace falta */
-  overflow-x: hidden;
+  box-sizing: border-box;
+  min-height: calc(100vh - 40px); /* ajusta a la pantalla con padding */
+  overflow: visible; /* ❌ sin scroll interno */
 }
 
-/* Scroll agradable y redondeado */
+/* Scrollbar estético */
 ::-webkit-scrollbar {
   width: 8px;
 }
+
 ::-webkit-scrollbar-thumb {
   background-color: #cbd5e1;
   border-radius: 8px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background-color: #94a3b8;
 }
 
-/* Mantiene impresión intacta */
+/* --- Mantiene la impresión intacta --- */
 @media print {
-  body {
-    display: block;
-    background: white;
-    padding: 0;
+  html, body {
     overflow: visible !important;
+    background: white !important;
+    height: auto !important;
   }
+
   #root, #root > div {
     overflow: visible !important;
     box-shadow: none !important;
     border-radius: 0 !important;
     max-width: 100% !important;
     width: 100% !important;
-    height: auto !important;
     padding: 0 !important;
+    height: auto !important;
   }
 }
