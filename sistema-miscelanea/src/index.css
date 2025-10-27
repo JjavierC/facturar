@@ -545,7 +545,7 @@ body {
   font-weight: 500; /* font-medium */
   text-decoration: none;
   transition: all 0.2s;
-  color: #6b7280; /* text-gray-500 */
+  color: #111111; /* text-gray-500 */
 }
 .navbar-clean-link:hover {
   background-color: #f9fafb; /* hover:bg-gray-50 */

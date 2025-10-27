@@ -29,7 +29,8 @@ exports.handler = async (event) => {
     const { nombre, apellido, cedula, telefono, correo } = clienteData;
 
     // 4️⃣ Validar campos obligatorios
-    if (!nombre || !apellido || !cedula || !telefono || !correo) {
+     if (!nombre || !apellido || !cedula)
+ {
       return { statusCode: 400, body: JSON.stringify({ message: "Faltan campos obligatorios." }) };
     }
 
