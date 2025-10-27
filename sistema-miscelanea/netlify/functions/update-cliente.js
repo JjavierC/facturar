@@ -22,14 +22,14 @@ exports.handler = async (event) => {
       };
     }
 
-    // --- ¡AQUÍ ESTABA EL ERROR! ---
-    // Faltaban las opciones de conexión
+    // --- ¡ESTA ES LA CORRECCIÓN! ---
+    // Añadimos las opciones de conexión igual que en tus otros archivos
     client = new MongoClient(MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       serverSelectionTimeoutMS: 5000,
     });
-    // -----------------------------
+    // ---------------------------------
 
     await client.connect();
     const db = client.db('miscelanea');

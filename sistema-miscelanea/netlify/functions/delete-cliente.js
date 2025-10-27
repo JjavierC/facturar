@@ -15,14 +15,14 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ message: "Falta el ID del cliente." }) };
     }
 
-    // --- ¡AQUÍ ESTABA EL ERROR! ---
-    // Faltaban las opciones de conexión
+    // --- ¡ESTA ES LA CORRECCIÓN! ---
+    // Añadimos las opciones de conexión igual que en tus otros archivos
     client = new MongoClient(MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       serverSelectionTimeoutMS: 5000,
     });
-    // -----------------------------
+    // ---------------------------------
 
     await client.connect();
     const db = client.db('miscelanea');
