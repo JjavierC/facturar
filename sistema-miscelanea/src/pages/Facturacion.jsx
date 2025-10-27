@@ -130,14 +130,21 @@ function Facturacion() {
 
   const handleImprimirFactura = () => { window.print(); setVentaExitosa(null); };
 
+  // -------------------- UI --------------------
+
   return (
-    <div className="bg-gray-50 min-h-screen flex flex-col items-center py-12 px-4 sm:px-8 lg:px-16">
-      <div className="w-full max-w-5xl bg-white shadow-2xl rounded-2xl p-8 md:p-10">
-        <h1 className="text-4xl font-bold text-center text-gray-800 mb-10">🧾 Punto de Venta</h1>
+    <div className="bg-gray-100 min-h-screen flex justify-center items-start py-12 px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-4xl bg-white shadow-2xl rounded-2xl p-8 md:p-10 border border-gray-200">
+        <h1 className="text-3xl font-bold text-center text-gray-800 mb-8 flex items-center justify-center gap-2">
+          <span role="img" aria-label="ticket">🧾</span>
+          Punto de Venta
+        </h1>
 
         {/* Buscar producto */}
-        <section className="mb-10">
-          <h2 className="text-xl font-semibold text-gray-700 mb-3">Buscar y añadir producto</h2>
+        <section className="mb-8">
+          <h2 className="text-lg font-semibold text-gray-700 mb-3">
+            Buscar y añadir producto
+          </h2>
           <div className="flex gap-2">
             <input
               ref={busquedaRef}
@@ -145,7 +152,7 @@ function Facturacion() {
               placeholder="Buscar por nombre o ID..."
               value={busqueda}
               onChange={handleBusquedaChange}
-              className="flex-grow p-3 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+              className="flex-grow p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
             />
           </div>
 
@@ -155,31 +162,37 @@ function Facturacion() {
                 <li
                   key={prod._id}
                   onClick={() => agregarProductoAlCarrito(prod)}
-                  className="p-3 hover:bg-indigo-50 cursor-pointer border-b last:border-none"
+                  className="p-3 hover:bg-indigo-50 cursor-pointer border-b last:border-none transition-colors"
                 >
-                  <span className="font-medium">{prod.nombre}</span> — ${prod.precio.toLocaleString()}
+                  <span className="font-medium text-gray-800">{prod.nombre}</span>
+                  <span className="text-gray-500 ml-2">
+                    ${prod.precio.toLocaleString()}
+                  </span>
                 </li>
               ))}
             </ul>
           )}
         </section>
 
-        {/* Tabla */}
-        <section className="mb-10">
-          <h2 className="text-2xl font-semibold text-gray-700 text-center mb-4">Resumen de la venta</h2>
+        {/* Resumen */}
+        <section className="mb-10 bg-gray-50 p-6 rounded-xl shadow-inner border border-gray-200">
+          <h2 className="text-xl font-semibold text-gray-700 text-center mb-4">
+            Resumen de la venta
+          </h2>
+
           <TablaVenta items={itemsVenta} actualizarItem={actualizarItemEnCarrito} />
 
           {itemsVenta.length > 0 && (
-            <div className="bg-gray-50 p-6 rounded-lg shadow-inner mt-6">
-              <div className="flex justify-between mb-2">
+            <div className="mt-6 bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+              <div className="flex justify-between mb-2 text-gray-700">
                 <span>Subtotal</span>
                 <span>${subtotal.toLocaleString('es-CO')}</span>
               </div>
-              <div className="flex justify-between mb-2">
+              <div className="flex justify-between mb-2 text-gray-700">
                 <span>IVA ({ivaPorcentaje}%)</span>
                 <span>${iva.toLocaleString('es-CO')}</span>
               </div>
-              <div className="flex justify-between font-bold text-xl border-t pt-2">
+              <div className="flex justify-between font-bold text-xl border-t pt-3 text-gray-900">
                 <span>Total</span>
                 <span>${total.toLocaleString('es-CO')}</span>
               </div>
@@ -196,14 +209,19 @@ function Facturacion() {
         </section>
 
         {mensaje && (
-          <div className={`mt-4 p-3 rounded-md text-center text-sm ${mensaje.type === 'success'
-              ? 'bg-green-100 text-green-700'
-              : 'bg-red-100 text-red-700'}`}>
+          <div
+            className={`mt-4 p-3 rounded-md text-center text-sm ${
+              mensaje.type === 'success'
+                ? 'bg-green-100 text-green-700 border border-green-200'
+                : 'bg-red-100 text-red-700 border border-red-200'
+            }`}
+          >
             {mensaje.text}
           </div>
         )}
       </div>
 
+      {/* Modal de factura */}
       {ventaExitosa && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl p-8 md:p-10 max-w-3xl w-full max-h-[90vh] overflow-y-auto">
