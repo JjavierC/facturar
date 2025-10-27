@@ -92,44 +92,63 @@ function Clientes() {
   };
 
   // --- 3. NUEVO: Función para ACTUALIZAR ---
-  const handleActualizar = async () => {
-    if (!clienteSeleccionado) return; // No hacer nada si no hay selección
+const handleActualizar = async () => {
+  if (!clienteSeleccionado) return;
 
-    setMensaje(null);
-    setLoading(true);
-    try {
-      // Llamamos a la nueva API (PUT)
-      await axios.put(`/.netlify/functions/update-cliente?id=${clienteSeleccionado._id}`, formData);
-      setMensaje({ type: 'success', text: `Cliente "${formData.nombre}" actualizado.` });
-      limpiarFormulario();
-      setRecargar(prev => prev + 1);
-    } catch (error) {
-      setMensaje({ type: 'error', text: 'Error al actualizar el cliente.' });
-      setLoading(false);
-    }
-  };
+  setMensaje(null);
+  setLoading(true);
+
+  // Debug: confirma el id en consola
+  console.log('[DEBUG] Actualizando cliente:', clienteSeleccionado);
+
+  try {
+    // Usar params es más confiable que concatenar en la URL
+    await axios.put('/.netlify/functions/update-cliente', formData, {
+      params: { id: clienteSeleccionado._id }
+    });
+
+    setMensaje({ type: 'success', text: `Cliente "${formData.nombre}" actualizado.` });
+    limpiarFormulario();
+    setRecargar(prev => prev + 1);
+  } catch (error) {
+    // Mostrar detalle en consola y al usuario
+    console.error('[ERROR] update-cliente:', error.response?.data || error.message);
+    const texto = error.response?.data?.message || error.response?.data?.error || 'Error al actualizar el cliente.';
+    setMensaje({ type: 'error', text: texto });
+    setLoading(false);
+  }
+};
 
   // --- 4. NUEVO: Función para ELIMINAR ---
-  const handleEliminar = async () => {
-    if (!clienteSeleccionado) return;
+const handleEliminar = async () => {
+  if (!clienteSeleccionado) return;
 
-    if (!window.confirm(`¿Seguro que quieres eliminar a ${clienteSeleccionado.nombre} ${clienteSeleccionado.apellido}?`)) {
-      return;
-    }
+  if (!window.confirm(`¿Seguro que quieres eliminar a ${clienteSeleccionado.nombre} ${clienteSeleccionado.apellido}?`)) {
+    return;
+  }
 
-    setMensaje(null);
-    setLoading(true);
-    try {
-      // Llamamos a la nueva API (DELETE)
-      await axios.delete(`/.netlify/functions/delete-cliente?id=${clienteSeleccionado._id}`);
-      setMensaje({ type: 'success', text: 'Cliente eliminado.' });
-      limpiarFormulario();
-      setRecargar(prev => prev + 1);
-    } catch (error) {
-      setMensaje({ type: 'error', text: 'Error al eliminar el cliente.' });
-      setLoading(false);
-    }
-  };
+  setMensaje(null);
+  setLoading(true);
+
+  // Debug: confirma el id en consola
+  console.log('[DEBUG] Eliminando cliente:', clienteSeleccionado);
+
+  try {
+    // Usar params en delete
+    await axios.delete('/.netlify/functions/delete-cliente', {
+      params: { id: clienteSeleccionado._id }
+    });
+
+    setMensaje({ type: 'success', text: 'Cliente eliminado.' });
+    limpiarFormulario();
+    setRecargar(prev => prev + 1);
+  } catch (error) {
+    console.error('[ERROR] delete-cliente:', error.response?.data || error.message);
+    const texto = error.response?.data?.message || error.response?.data?.error || 'Error al eliminar el cliente.';
+    setMensaje({ type: 'error', text: texto });
+    setLoading(false);
+  }
+};
   
   return (
     <div className="p-4 md:p-8 bg-white min-h-screen" style={{ fontFamily: 'Inter, sans-serif' }}>

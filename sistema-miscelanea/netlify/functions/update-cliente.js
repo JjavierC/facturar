@@ -1,66 +1,69 @@
 // netlify/functions/update-cliente.js
 const { MongoClient, ObjectId } = require("mongodb");
-const MONGODB_URI = process.env.MONGODB_URI;
+
+const uri = process.env.MONGODB_URI;
+const client = new MongoClient(uri, { serverSelectionTimeoutMS: 5000 });
 
 exports.handler = async (event) => {
-  if (event.httpMethod !== 'PUT') {
-    return { statusCode: 405, body: JSON.stringify({ message: 'Método no permitido. Use PUT.' }) };
+  if (event.httpMethod !== "PUT") {
+    return { statusCode: 405, body: JSON.stringify({ message: "Método no permitido" }) };
   }
 
-  let client;
   try {
-    const clienteData = JSON.parse(event.body || "{}");
-    const clienteId = event.queryStringParameters.id; 
-
+    // 1️⃣ Extraer ID de la query string
+    const clienteId = event.queryStringParameters?.id;
     if (!clienteId) {
-      return { statusCode: 400, body: JSON.stringify({ message: "Falta el ID del cliente." }) };
-    }
-    if (!clienteData.nombre || !clienteData.apellido || !clienteData.cedula) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ message: "Faltan campos obligatorios." })
-      };
+      return { statusCode: 400, body: JSON.stringify({ message: "Falta el parámetro 'id' del cliente." }) };
     }
 
-    // --- ¡ESTA ES LA CORRECCIÓN! ---
-    // Añadimos las opciones de conexión igual que en tus otros archivos
-    client = new MongoClient(MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000,
-    });
-    // ---------------------------------
+    // 2️⃣ Validar formato del ID
+    let objectId;
+    try {
+      objectId = new ObjectId(clienteId);
+    } catch {
+      return { statusCode: 400, body: JSON.stringify({ message: "ID de cliente inválido." }) };
+    }
 
+    // 3️⃣ Parsear el cuerpo JSON recibido
+    const clienteData = JSON.parse(event.body || "{}");
+    const { nombre, apellido, cedula, telefono, correo } = clienteData;
+
+    // 4️⃣ Validar campos obligatorios
+    if (!nombre || !apellido || !cedula || !telefono || !correo) {
+      return { statusCode: 400, body: JSON.stringify({ message: "Faltan campos obligatorios." }) };
+    }
+
+    // 5️⃣ Conectar con MongoDB
     await client.connect();
-    const db = client.db('miscelanea');
-    const clientesCollection = db.collection('clientes');
+    const db = client.db("miscelanea");
+    const collection = db.collection("clientes");
 
-    const filter = { _id: ObjectId(clienteId) }; 
-    const updateDoc = {
-      $set: {
-        nombre: clienteData.nombre,
-        apellido: clienteData.apellido,
-        cedula: clienteData.cedula,
-      },
-    };
+    // 6️⃣ Ejecutar actualización
+    const result = await collection.updateOne(
+      { _id: objectId },
+      { $set: clienteData }
+    );
 
-    const result = await clientesCollection.updateOne(filter, updateDoc);
-    
     if (result.matchedCount === 0) {
       return { statusCode: 404, body: JSON.stringify({ message: "Cliente no encontrado." }) };
     }
 
+    // 7️⃣ Respuesta exitosa
     return {
       statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: "Cliente actualizado con éxito" })
+      body: JSON.stringify({ message: "Cliente actualizado correctamente." }),
     };
+
   } catch (error) {
-    console.error('Error en update-cliente:', error);
-    return { statusCode: 500, body: JSON.stringify({ error: 'Fallo interno al actualizar el cliente.', details: error.message }) };
+    console.error("Error en update-cliente:", error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: "Error al actualizar el cliente.",
+        details: error.message,
+      }),
+    };
   } finally {
-    if (client) {
-      try { await client.close(); } catch (_) {}
-    }
+    await client.close();
   }
 };

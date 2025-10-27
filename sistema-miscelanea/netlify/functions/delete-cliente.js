@@ -1,58 +1,57 @@
 // netlify/functions/delete-cliente.js
 const { MongoClient, ObjectId } = require("mongodb");
-const MONGODB_URI = process.env.MONGODB_URI;
+
+const uri = process.env.MONGODB_URI;
+const client = new MongoClient(uri, { serverSelectionTimeoutMS: 5000 });
 
 exports.handler = async (event) => {
-  if (event.httpMethod !== 'DELETE') {
-    return { statusCode: 405, body: JSON.stringify({ message: 'Método no permitido. Use DELETE.' }) };
+  if (event.httpMethod !== "DELETE") {
+    return { statusCode: 405, body: JSON.stringify({ message: "Método no permitido" }) };
   }
 
-  let client;
   try {
-    const clienteId = event.queryStringParameters.id; 
-
+    // 1️⃣ Extraer ID del cliente desde la query
+    const clienteId = event.queryStringParameters?.id;
     if (!clienteId) {
-      return { statusCode: 400, body: JSON.stringify({ message: "Falta el ID del cliente." }) };
+      return { statusCode: 400, body: JSON.stringify({ message: "Falta el parámetro 'id' del cliente." }) };
     }
 
-    // --- ¡ESTA ES LA CORRECCIÓN! ---
-    // Añadimos las opciones de conexión igual que en tus otros archivos
-    client = new MongoClient(MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000,
-    });
-    // ---------------------------------
+    // 2️⃣ Validar formato del ID
+    let objectId;
+    try {
+      objectId = new ObjectId(clienteId);
+    } catch {
+      return { statusCode: 400, body: JSON.stringify({ message: "ID de cliente inválido." }) };
+    }
 
+    // 3️⃣ Conectar con MongoDB
     await client.connect();
-    const db = client.db('miscelanea');
-    const clientesCollection = db.collection('clientes');
+    const db = client.db("miscelanea");
+    const collection = db.collection("clientes");
 
-    const filter = { _id: ObjectId(clienteId) };
+    // 4️⃣ Ejecutar eliminación
+    const result = await collection.deleteOne({ _id: objectId });
 
-    // Borrado Lógico (Recomendado)
-    const updateDoc = {
-      $set: {
-        activo: false,
-      },
-    };
-    const result = await clientesCollection.updateOne(filter, updateDoc);
-
-    if (result.matchedCount === 0) {
+    if (result.deletedCount === 0) {
       return { statusCode: 404, body: JSON.stringify({ message: "Cliente no encontrado." }) };
     }
 
+    // 5️⃣ Respuesta exitosa
     return {
       statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: "Cliente eliminado (marcado como inactivo) con éxito" })
+      body: JSON.stringify({ message: "Cliente eliminado correctamente." }),
     };
+
   } catch (error) {
-    console.error('Error en delete-cliente:', error);
-    return { statusCode: 500, body: JSON.stringify({ error: 'Fallo interno al eliminar el cliente.', details: error.message }) };
+    console.error("Error en delete-cliente:", error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: "Error al eliminar el cliente.",
+        details: error.message,
+      }),
+    };
   } finally {
-    if (client) {
-      try { await client.close(); } catch (_) {}
-    }
+    await client.close();
   }
 };
