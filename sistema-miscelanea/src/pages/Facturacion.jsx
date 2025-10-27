@@ -88,7 +88,7 @@ function Facturacion() {
         total,
         fecha: new Date().toISOString()
       };
-      const res = await axios.post('/.netlify/functions/procesar-venta', payload);
+      const res = await axios.post('/.netlify/functions/guardar-venta', payload);
       setVentaExitosa(res.data);
       setItemsVenta([]);
       setMensaje({ type: 'success', text: 'Venta registrada correctamente.' });
