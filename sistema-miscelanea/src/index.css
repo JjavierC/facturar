@@ -494,7 +494,7 @@ body {
 
 /* Contenedor principal del Navbar */
 .navbar-clean-container {
-  width: 92%;
+  width: 95%;
   height: 64px; /* h-16 */
   background-color: #557dff; /* bg-white */
   /* shadow-md */
