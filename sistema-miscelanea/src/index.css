@@ -606,15 +606,18 @@ body {
 
 /* === Diseño cómodo y centrado solo para la vista (no impresión) === */
 body {
-  background-color: #f4f4f5; /* fondo gris claro, elegante */
+  background-color: #f4f4f5;
   font-family: 'Inter', sans-serif;
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  min-height: 100vh;
+  height: 100vh; /* fijo, no min-height */
   margin: 0;
   padding: 20px;
+  overflow-y: auto; /* scroll solo si es necesario */
+  overflow-x: hidden; /* evita scroll lateral accidental */
 }
+
 
 /* Contenedor principal del contenido de la factura */
 #root > div {
@@ -622,9 +625,9 @@ body {
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   padding: 24px;
-  max-width: 900px; /* controla el ancho visible */
+  max-width: 1000px; /* controla el ancho visible */
   width: 100%;
-  min-height: 90vh;
+  min-height: 92vh;
   overflow: auto;
 }
 
