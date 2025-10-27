@@ -1,9 +1,8 @@
 // netlify/functions/update-cliente.js
-const { MongoClient, ObjectId } = require("mongodb"); // ¡Importa ObjectId!
+const { MongoClient, ObjectId } = require("mongodb");
 const MONGODB_URI = process.env.MONGODB_URI;
 
 exports.handler = async (event) => {
-  // Usamos PUT para actualizar, es el estándar
   if (event.httpMethod !== 'PUT') {
     return { statusCode: 405, body: JSON.stringify({ message: 'Método no permitido. Use PUT.' }) };
   }
@@ -11,15 +10,11 @@ exports.handler = async (event) => {
   let client;
   try {
     const clienteData = JSON.parse(event.body || "{}");
-    
-    // El ID viene en la URL, ej: /update-cliente?id=12345
     const clienteId = event.queryStringParameters.id; 
 
     if (!clienteId) {
       return { statusCode: 400, body: JSON.stringify({ message: "Falta el ID del cliente." }) };
     }
-    
-    // Validaciones
     if (!clienteData.nombre || !clienteData.apellido || !clienteData.cedula) {
       return {
         statusCode: 400,
@@ -27,25 +22,25 @@ exports.handler = async (event) => {
       };
     }
 
+    // --- ¡AQUÍ ESTABA EL ERROR! ---
+    // Faltaban las opciones de conexión
     client = new MongoClient(MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       serverSelectionTimeoutMS: 5000,
     });
+    // -----------------------------
+
     await client.connect();
     const db = client.db('miscelanea');
     const clientesCollection = db.collection('clientes');
 
-    // ¡CRÍTICO! Necesitas convertir el ID de string a ObjectId
     const filter = { _id: ObjectId(clienteId) }; 
-    
-    // Documento con los campos a actualizar
     const updateDoc = {
       $set: {
         nombre: clienteData.nombre,
         apellido: clienteData.apellido,
         cedula: clienteData.cedula,
-        // No tocamos el campo 'activo'
       },
     };
 

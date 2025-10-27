@@ -496,7 +496,7 @@ body {
 .navbar-clean-container {
   width: 100%;
   height: 64px; /* h-16 */
-  background-color: #ffffff; /* bg-white */
+  background-color: #557dff; /* bg-white */
   /* shadow-md */
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
   display: flex;
@@ -552,7 +552,7 @@ body {
   color: #111827; /* hover:text-gray-900 */
 }
 .navbar-clean-link-active {
-  background-color: #4b81ee; /* bg-gray-100 */
+  background-color: #f3f4f6; /* bg-gray-100 */
   color: #2563eb; /* text-blue-600 */
 }
 

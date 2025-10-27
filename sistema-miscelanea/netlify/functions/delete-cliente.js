@@ -1,5 +1,5 @@
 // netlify/functions/delete-cliente.js
-const { MongoClient, ObjectId } = require("mongodb"); // ¡Importa ObjectId!
+const { MongoClient, ObjectId } = require("mongodb");
 const MONGODB_URI = process.env.MONGODB_URI;
 
 exports.handler = async (event) => {
@@ -9,28 +9,28 @@ exports.handler = async (event) => {
 
   let client;
   try {
-    // El ID viene en la URL
     const clienteId = event.queryStringParameters.id; 
 
     if (!clienteId) {
       return { statusCode: 400, body: JSON.stringify({ message: "Falta el ID del cliente." }) };
     }
 
+    // --- ¡AQUÍ ESTABA EL ERROR! ---
+    // Faltaban las opciones de conexión
     client = new MongoClient(MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       serverSelectionTimeoutMS: 5000,
     });
+    // -----------------------------
+
     await client.connect();
     const db = client.db('miscelanea');
     const clientesCollection = db.collection('clientes');
 
-    // ¡CRÍTICO! Convertir el ID a ObjectId
     const filter = { _id: ObjectId(clienteId) };
 
-    // --- Borrado Lógico (Recomendado) ---
-    // En lugar de borrarlo, lo marcamos como inactivo.
-    // Tu 'get-clientes.js' ya filtra por "activo: true", así que esto funciona.
+    // Borrado Lógico (Recomendado)
     const updateDoc = {
       $set: {
         activo: false,
