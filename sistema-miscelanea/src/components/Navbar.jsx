@@ -67,7 +67,7 @@ function Navbar() {
           Clientes
         </NavLink>
         <NavLink to="/facturacion" isActive={location.pathname === '/facturacion'}>
-          Facturación
+          Area De Ventas
         </NavLink>
         <NavLink to="/inventario" isActive={location.pathname === '/inventario'}>
           Productos
