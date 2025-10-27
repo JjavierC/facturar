@@ -611,54 +611,60 @@ body {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  height: 100vh; /* fijo, no min-height */
+  height: 100vh; /* ocupa toda la altura visible */
   margin: 0;
   padding: 20px;
-  overflow-y: auto; /* scroll solo si es necesario */
-  overflow-x: hidden; /* evita scroll lateral accidental */
+  overflow: hidden; /* 🚫 elimina el scroll del body */
 }
 
 
-/* Contenedor principal del contenido de la factura */
+#root {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  overflow: hidden; /* evita doble scroll */
+}
+
 #root > div {
   background-color: white;
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   padding: 24px;
-  max-width: 1000px; /* controla el ancho visible */
+  max-width: 1000px; /* controla ancho visible */
   width: 100%;
-  min-height: 92vh;
-  overflow: auto;
+  height: calc(100vh - 40px); /* 🔥 ajusta a la altura real visible */
+  overflow-y: auto; /* ✅ scroll solo dentro del contenido si hace falta */
+  overflow-x: hidden;
 }
 
 /* Scroll agradable y redondeado */
 ::-webkit-scrollbar {
   width: 8px;
 }
-
 ::-webkit-scrollbar-thumb {
   background-color: #cbd5e1;
   border-radius: 8px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
   background-color: #94a3b8;
 }
 
-/* --- Muy importante --- */
-/* Asegura que la vista de impresión no cambie */
+/* Mantiene impresión intacta */
 @media print {
   body {
     display: block;
     background: white;
     padding: 0;
+    overflow: visible !important;
   }
-
-  #root > div {
+  #root, #root > div {
+    overflow: visible !important;
     box-shadow: none !important;
     border-radius: 0 !important;
     max-width: 100% !important;
     width: 100% !important;
+    height: auto !important;
     padding: 0 !important;
   }
 }
