@@ -22,7 +22,9 @@ exports.handler = async (event) => {
     if (!MONGODB_URI) {
       return {
         statusCode: 500,
-        body: JSON.stringify({ message: "Error: MONGODB_URI no está configurada." }),
+        body: JSON.stringify({
+          message: "Error: MONGODB_URI no está configurada.",
+        }),
       };
     }
 
@@ -31,27 +33,33 @@ exports.handler = async (event) => {
     const ventasColl = db.collection("ventas");
     const productosColl = db.collection("productos");
 
-    // ===========================
-    // VALIDAR Y FORMATEAR ITEMS
-    // ===========================
+    // ===================================================
+    // VALIDAR ITEMS Y ACEPTAR CUALQUIER TIPO DE ID
+    // ===================================================
     const enrichedItems = items.map((item) => {
-      const productoId =
-        item.producto_id && ObjectId.isValid(item.producto_id)
+      let productoId = null;
+
+      if (item.producto_id) {
+        // Si es un ObjectId válido → se convierte
+        // Si NO es válido → se deja tal cual (string)
+        productoId = ObjectId.isValid(item.producto_id)
           ? new ObjectId(item.producto_id)
-          : null;
+          : item.producto_id;
+      }
 
       return {
         producto_id: productoId,
         nombre: item.nombre,
         cantidad: Number(item.cantidad) || 0,
         precio: Number(item.precio) || 0,
-        subtotal: (Number(item.cantidad) || 0) * (Number(item.precio) || 0),
+        subtotal:
+          (Number(item.cantidad) || 0) * (Number(item.precio) || 0),
       };
     });
 
-    // ===========================
+    // ===================================================
     // GUARDAR LA VENTA
-    // ===========================
+    // ===================================================
     const nuevaVenta = {
       items: enrichedItems,
       subtotal,
@@ -63,14 +71,14 @@ exports.handler = async (event) => {
 
     const result = await ventasColl.insertOne(nuevaVenta);
 
-    // ===========================
-    // RESTAR STOCK POR PRODUCTO
-    // ===========================
+    // ===================================================
+    // RESTAR EL STOCK DE CADA PRODUCTO
+    // ===================================================
     for (const item of enrichedItems) {
       if (!item.producto_id) continue;
 
       await productosColl.updateOne(
-        { _id: item.producto_id },
+        { _id: item.producto_id }, // Acepta ObjectId o String
         { $inc: { stock: -Math.abs(item.cantidad) } }
       );
     }
@@ -82,13 +90,20 @@ exports.handler = async (event) => {
         ventaId: result.insertedId,
       }),
     };
-
   } catch (error) {
     console.error("Error al registrar la venta:", error);
-    return { statusCode: 500, body: JSON.stringify({ message: "Error interno del servidor." }) };
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: "Error interno del servidor.",
+        error: error.toString(),
+      }),
+    };
   } finally {
     if (client) {
-      try { await client.close(); } catch (_) {}
+      try {
+        await client.close();
+      } catch (_) {}
     }
   }
 };
