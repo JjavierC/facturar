@@ -29,9 +29,14 @@ exports.handler = async (event) => {
     }
 
     client = await MongoClient.connect(MONGODB_URI);
-    const db = client.db("facturacion");
+
+    // ==========================================
+    // CAMBIO CRÍTICO:
+    // Usar la misma BD y colección que Inventario.jsx
+    // ==========================================
+    const db = client.db("miscelanea");     // antes: facturacion
+    const productosColl = db.collection("inventario"); // antes: productos
     const ventasColl = db.collection("ventas");
-    const productosColl = db.collection("productos");
 
     // ===================================================
     // VALIDAR ITEMS Y ACEPTAR CUALQUIER TIPO DE ID
@@ -40,8 +45,6 @@ exports.handler = async (event) => {
       let productoId = null;
 
       if (item.producto_id) {
-        // Si es un ObjectId válido → se convierte
-        // Si NO es válido → se deja tal cual (string)
         productoId = ObjectId.isValid(item.producto_id)
           ? new ObjectId(item.producto_id)
           : item.producto_id;
@@ -58,7 +61,7 @@ exports.handler = async (event) => {
     });
 
     // ===================================================
-    // GUARDAR LA VENTA
+    // GUARDAR LA VENTA EN coleccion ventas
     // ===================================================
     const nuevaVenta = {
       items: enrichedItems,
@@ -72,13 +75,13 @@ exports.handler = async (event) => {
     const result = await ventasColl.insertOne(nuevaVenta);
 
     // ===================================================
-    // RESTAR EL STOCK DE CADA PRODUCTO
+    // RESTAR EL STOCK EN miscelanea.inventario
     // ===================================================
     for (const item of enrichedItems) {
       if (!item.producto_id) continue;
 
       await productosColl.updateOne(
-        { _id: item.producto_id }, // Acepta ObjectId o String
+        { _id: item.producto_id },
         { $inc: { stock: -Math.abs(item.cantidad) } }
       );
     }
