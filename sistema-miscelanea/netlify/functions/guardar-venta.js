@@ -1,4 +1,3 @@
-// netlify/functions/guardar-venta.js
 const { MongoClient, ObjectId } = require("mongodb");
 const MONGODB_URI = process.env.MONGODB_URI;
 
@@ -8,74 +7,72 @@ exports.handler = async (event) => {
   }
 
   let client;
+
   try {
     const data = JSON.parse(event.body || "{}");
     const { items, subtotal, iva, total, id_usuario } = data;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
-      return { statusCode: 400, body: JSON.stringify({ message: "No hay productos en la venta." }) };
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ message: "No hay productos en la venta." }),
+      };
     }
 
-    client = new MongoClient(MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000,
-    });
-    await client.connect();
-    const db = client.db("miscelanea");
+    if (!MONGODB_URI) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ message: "Error: MONGODB_URI no está configurada." }),
+      };
+    }
 
-    // Enriquecemos cada item: aseguramos precio y costo y calculamos ganancia_item
-    const productosColl = db.collection("inventario");
+    client = await MongoClient.connect(MONGODB_URI);
+    const db = client.db("facturacion");
+    const ventasColl = db.collection("ventas");
+    const productosColl = db.collection("productos");
 
-    const enrichedItems = await Promise.all(items.map(async (it) => {
-      // Se espera que it tenga al menos: _id (string o ObjectId) o nombre, cantidad, precio (snapshot).
-      let productFromDB = null;
-      let prodId = null;
-      if (it._id) {
-        try { prodId = typeof it._id === "string" ? ObjectId(it._id) : it._id; }
-        catch(e) { prodId = null; }
-        if (prodId) {
-          productFromDB = await productosColl.findOne({ _id: prodId });
-        }
-      }
-
-      const precio = Number(it.precio != null ? it.precio : (productFromDB?.precio ?? 0));
-      const costo = Number(productFromDB?.costo ?? (it.costo != null ? it.costo : 0));
-      const cantidad = Number(it.cantidad ?? 1);
-      const ganancia_item = (precio - costo) * cantidad;
+    // ===========================
+    // VALIDAR Y FORMATEAR ITEMS
+    // ===========================
+    const enrichedItems = items.map((item) => {
+      const productoId =
+        item.producto_id && ObjectId.isValid(item.producto_id)
+          ? new ObjectId(item.producto_id)
+          : null;
 
       return {
-        producto_id: productFromDB?._id ?? null,
-        nombre: it.nombre ?? productFromDB?.nombre ?? "",
-        precio,
-        costo,
-        cantidad,
-        ganancia_item,
+        producto_id: productoId,
+        nombre: item.nombre,
+        cantidad: Number(item.cantidad) || 0,
+        precio: Number(item.precio) || 0,
+        subtotal: (Number(item.cantidad) || 0) * (Number(item.precio) || 0),
       };
-    }));
+    });
 
-    // Suma total de ganancias para la venta
-    const total_ganancias = enrichedItems.reduce((acc, it) => acc + (Number(it.ganancia_item) || 0), 0);
-
+    // ===========================
+    // GUARDAR LA VENTA
+    // ===========================
     const nuevaVenta = {
-      id_usuario: id_usuario ? (ObjectId.isValid(id_usuario) ? ObjectId(id_usuario) : id_usuario) : null,
       items: enrichedItems,
-      subtotal: Number(subtotal) || 0,
-      iva: Number(iva) || 0,
-      total: Number(total) || 0,
-      total_ganancias,
-      fecha_venta: new Date(),
+      subtotal,
+      iva,
+      total,
+      id_usuario,
+      fecha: new Date(),
     };
 
-    const result = await db.collection("ventas").insertOne(nuevaVenta);
+    const result = await ventasColl.insertOne(nuevaVenta);
 
-    // Reducir stock por cada item que tenga producto_id
-    const stockOps = enrichedItems
-      .filter(i => i.producto_id)
-      .map(i => productosColl.updateOne({ _id: i.producto_id }, { $inc: { stock: -Math.abs(i.cantidad) } }));
+    // ===========================
+    // RESTAR STOCK POR PRODUCTO
+    // ===========================
+    for (const item of enrichedItems) {
+      if (!item.producto_id) continue;
 
-    if (stockOps.length) {
-      await Promise.all(stockOps);
+      await productosColl.updateOne(
+        { _id: item.producto_id },
+        { $inc: { stock: -Math.abs(item.cantidad) } }
+      );
     }
 
     return {
@@ -85,6 +82,7 @@ exports.handler = async (event) => {
         ventaId: result.insertedId,
       }),
     };
+
   } catch (error) {
     console.error("Error al registrar la venta:", error);
     return { statusCode: 500, body: JSON.stringify({ message: "Error interno del servidor." }) };

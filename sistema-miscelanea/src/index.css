@@ -567,7 +567,7 @@ body {
 .navbar-clean-user-text {
   font-size: 0.875rem; /* text-sm */
   font-weight: 500; /* font-medium */
-  color: #374151; /* text-gray-700 */
+  color: #000000; /* text-gray-700 */
    margin-left: -8px;
 }
 @media (max-width: 768px) {
