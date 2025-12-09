@@ -12,18 +12,23 @@ function Inventario() {
 
   const [mensajeEliminar, setMensajeEliminar] = useState(null);
 
-  // ESTADOS NUEVOS PARA EDITAR
+  // Estados para editar
   const [productoEditar, setProductoEditar] = useState(null);
   const [mensajeEditar, setMensajeEditar] = useState(null);
 
+  // -----------------------------
+  // Cargar productos
+  // -----------------------------
   const cargarProductos = () => {
     setLoading(true);
+    setError(null);
+
     axios.get('/.netlify/functions/get-productos')
-      .then(res => {
+      .then((res) => {
         setProductos(res.data);
         setLoading(false);
       })
-      .catch(err => {
+      .catch((err) => {
         console.error("Error cargando productos:", err);
         setError("Error al cargar datos del inventario.");
         setLoading(false);
@@ -35,26 +40,28 @@ function Inventario() {
   }, [recargar]);
 
   const handleProductAdded = () => {
-    setRecargar(prev => prev + 1);
+    setRecargar((prev) => prev + 1);
   };
 
-  const handleEliminarProducto = async (productoId, nombreProducto) => {
-    if (!window.confirm(`¿Eliminar "${nombreProducto}"?`)) return;
+  // -----------------------------
+  // Eliminar producto
+  // -----------------------------
+  const handleEliminarProducto = async (id, nombre) => {
+    if (!window.confirm(`¿Eliminar "${nombre}"?`)) return;
 
-    setMensajeEliminar(null);
     try {
-      const res = await axios.delete(`/.netlify/functions/delete-producto?id=${productoId}`);
-      setMensajeEliminar({ type: 'success', text: res.data.message });
-      setRecargar(prev => prev + 1);
+      const res = await axios.delete(`/.netlify/functions/delete-producto?id=${id}`);
+      setMensajeEliminar({ type: "success", text: res.data.message });
+      setRecargar((prev) => prev + 1);
     } catch (err) {
-      console.error("Error eliminando producto:", err);
-      setMensajeEliminar({ type: 'error', text: 'Error al eliminar el producto.' });
+      console.error(err);
+      setMensajeEliminar({ type: "error", text: "Error al eliminar el producto." });
     }
   };
 
-  // ================================
-  // ACTUALIZAR PRODUCTO (EDITAR)
-  // ================================
+  // -----------------------------
+  // Guardar edición
+  // -----------------------------
   const actualizarProducto = async () => {
     try {
       await axios.put(
@@ -67,7 +74,7 @@ function Inventario() {
       setTimeout(() => {
         setProductoEditar(null);
         setRecargar((prev) => prev + 1);
-      }, 600);
+      }, 700);
 
     } catch (err) {
       console.error(err);
@@ -75,8 +82,12 @@ function Inventario() {
     }
   };
 
+  // ===========================================================
+  // RENDER
+  // ===========================================================
   return (
     <div className="p-4 md:p-8 bg-gray-100 min-h-screen">
+
       <h1 className="text-3xl font-bold mb-6 text-gray-800">Gestión de Inventario</h1>
 
       <FormularioProducto onProductAdded={handleProductAdded} />
@@ -87,25 +98,28 @@ function Inventario() {
         {mensajeEliminar && (
           <div
             className={`mb-4 p-3 rounded-md text-center ${
-              mensajeEliminar.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+              mensajeEliminar.type === "success"
+                ? "bg-green-100 text-green-700"
+                : "bg-red-100 text-red-700"
             }`}
           >
             {mensajeEliminar.text}
           </div>
         )}
 
-        {loading && <div className="text-center text-indigo-600 p-4">Cargando...</div>}
-        {error && <div className="text-center text-red-500 p-4">{error}</div>}
+        {loading && <p className="text-center text-indigo-600 p-4">Cargando...</p>}
+        {error && <p className="text-center text-red-500 p-4">{error}</p>}
 
         {!loading && !error && (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
+
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Descripción</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Costo</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Precio Venta</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Precio</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stock</th>
                   <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Acciones</th>
                 </tr>
@@ -117,10 +131,11 @@ function Inventario() {
                     <td className="px-4 py-3 text-sm">{p.nombre}</td>
                     <td className="px-4 py-3 text-sm text-gray-500">{p.descripcion}</td>
                     <td className="px-4 py-3 text-sm text-red-600">${p.costo}</td>
-                    <td className="px-4 py-3 text-sm text-green-600 font-semibold">${p.precio}</td>
+                    <td className="px-4 py-3 text-sm text-green-700">${p.precio}</td>
                     <td className="px-4 py-3 text-sm font-bold">{p.stock}</td>
 
                     <td className="px-4 py-3 text-center flex gap-3 justify-center">
+
                       <button
                         onClick={() => setProductoEditar(p)}
                         className="text-blue-600 hover:text-blue-800 p-1 rounded-md hover:bg-blue-100"
@@ -134,6 +149,7 @@ function Inventario() {
                       >
                         <Trash2 size={18} />
                       </button>
+
                     </td>
                   </tr>
                 ))}
@@ -148,12 +164,13 @@ function Inventario() {
         )}
       </div>
 
-      {/* ======================================================== */}
-      {/* MODAL PARA EDITAR PRODUCTO */}
-      {/* ======================================================== */}
+      {/* ======================================================= */}
+      {/* MODAL EDITAR - PROFESIONAL & CENTRADO */}
+      {/* ======================================================= */}
       {productoEditar && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md animate-fade">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+
+          <div className="bg-white w-full max-w-md rounded-lg shadow-2xl p-6 animate-fade max-h-[90vh] overflow-y-auto">
 
             <h2 className="text-xl font-bold mb-4">Editar Producto</h2>
 
@@ -196,19 +213,21 @@ function Inventario() {
             />
 
             <div className="flex justify-between mt-4">
+
               <button
                 onClick={() => setProductoEditar(null)}
-                className="px-4 py-2 bg-gray-300 rounded"
+                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
               >
                 Cancelar
               </button>
 
               <button
                 onClick={actualizarProducto}
-                className="px-4 py-2 bg-green-500 text-white rounded"
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
               >
                 Guardar
               </button>
+
             </div>
 
             {mensajeEditar && (
@@ -216,6 +235,7 @@ function Inventario() {
             )}
 
           </div>
+
         </div>
       )}
     </div>
