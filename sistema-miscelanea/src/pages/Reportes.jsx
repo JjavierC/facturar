@@ -11,8 +11,8 @@ function Reportes() {
   const [idBusqueda, setIdBusqueda] = useState("");
   const [fechaBusqueda, setFechaBusqueda] = useState("");
 
-  // ✅ ADMIN (simple y seguro)
-  const esAdmin = true; // ← luego lo conectamos a auth real
+  // ✅ ADMIN (simple)
+  const esAdmin = true;
 
   useEffect(() => {
     axios
@@ -58,13 +58,19 @@ function Reportes() {
   // ANULAR VENTA
   // ======================
   const anularVenta = async (id) => {
-    if (!window.confirm("¿Anular esta venta?")) return;
+    if (!window.confirm("¿Seguro que deseas anular esta venta?")) return;
 
     await axios.post("/.netlify/functions/anular-venta", { ventaId: id });
 
     setVentas((prev) =>
       prev.map((v) =>
-        v._id === id ? { ...v, anulada: true } : v
+        v._id === id
+          ? {
+              ...v,
+              anulada: true,
+              fecha_anulacion: new Date(),
+            }
+          : v
       )
     );
   };
@@ -116,7 +122,7 @@ function Reportes() {
       {/* ===== FILTROS ===== */}
       <div className="bg-white p-4 rounded shadow flex flex-wrap gap-4 mb-6">
         <input
-          className="border px-3 py-2 rounded"
+          className="border px-3 py-2 rounded w-44"
           placeholder="Buscar por ID"
           value={idBusqueda}
           onChange={(e) => setIdBusqueda(e.target.value)}
@@ -129,13 +135,13 @@ function Reportes() {
         />
         <button
           onClick={exportarPDF}
-          className="ml-auto bg-indigo-600 text-white px-4 py-2 rounded"
+          className="ml-auto bg-indigo-600 hover:bg-indigo-700 transition text-white px-5 py-2 rounded shadow"
         >
-          Exportar PDF
+          📄 Exportar PDF
         </button>
       </div>
 
-      {/* ===== TABLA ===== */}
+      {/* ===== TABLA ACTIVAS ===== */}
       <div className="overflow-x-auto bg-white rounded shadow">
         <table className="w-full border-collapse">
           <thead className="bg-gray-50">
@@ -149,7 +155,10 @@ function Reportes() {
           </thead>
           <tbody>
             {ventasFiltradas.map((v) => (
-              <tr key={v._id} className="text-center">
+              <tr
+                key={v._id}
+                className="text-center hover:bg-gray-50 transition"
+              >
                 <td className="p-2 border">
                   {v._id.toString().slice(-6)}
                 </td>
@@ -164,7 +173,7 @@ function Reportes() {
                   <td className="p-2 border">
                     <button
                       onClick={() => anularVenta(v._id)}
-                      className="text-red-600 hover:underline"
+                      className="px-3 py-1 rounded bg-red-100 text-red-600 hover:bg-red-200 transition"
                     >
                       Anular
                     </button>
@@ -203,16 +212,25 @@ function Reportes() {
                 {ventas
                   .filter((v) => v.anulada)
                   .map((v) => (
-                    <tr key={v._id} className="text-center">
+                    <tr
+                      key={v._id}
+                      className="text-center hover:bg-red-50 transition"
+                    >
                       <td className="p-2 border">
                         {v._id.toString().slice(-6)}
                       </td>
                       <td className="p-2 border">
-                        {new Date(v.fecha || v.fecha_venta).toLocaleString()}
+                        {new Date(
+                          v.fecha || v.fecha_venta
+                        ).toLocaleString()}
                       </td>
                       <td className="p-2 border">${v.total}</td>
                       <td className="p-2 border">
-                        {new Date(v.fecha_anulacion).toLocaleString()}
+                        {v.fecha_anulacion
+                          ? new Date(
+                              v.fecha_anulacion
+                            ).toLocaleString()
+                          : "—"}
                       </td>
                     </tr>
                   ))}
