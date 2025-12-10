@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
-import FacturaImprimible from "../components/FacturaImprimible";
+import FacturaImprimible from "../components";
 
 function Reportes() {
   const [ventas, setVentas] = useState([]);
@@ -10,10 +10,13 @@ function Reportes() {
   const [idBusqueda, setIdBusqueda] = useState("");
   const [fechaBusqueda, setFechaBusqueda] = useState("");
 
+  // ✅ rango fechas PDF
   const [fechaInicio, setFechaInicio] = useState("");
   const [fechaFin, setFechaFin] = useState("");
 
+  // ✅ venta a imprimir
   const [ventaSeleccionada, setVentaSeleccionada] = useState(null);
+  const printRef = useRef();
 
   const esAdmin = true;
 
@@ -78,8 +81,10 @@ function Reportes() {
   // IMPRIMIR UNA VENTA
   // ======================
   const imprimirVenta = (venta) => {
-    setVentaSeleccionada({ tipo: "una", venta });
-    setTimeout(() => window.print(), 200);
+    setVentaSeleccionada(venta);
+    setTimeout(() => {
+      window.print();
+    }, 100);
   };
 
   // ======================
@@ -104,8 +109,10 @@ function Reportes() {
       return;
     }
 
-    setVentaSeleccionada({ tipo: "multiple", ventas: filtradas });
-    setTimeout(() => window.print(), 200);
+    setVentaSeleccionada({ multiple: true, ventas: filtradas });
+    setTimeout(() => {
+      window.print();
+    }, 100);
   };
 
   if (loading) return <div className="p-10 text-center">Cargando...</div>;
@@ -213,16 +220,18 @@ function Reportes() {
         </table>
       </div>
 
-      {/* ===== ZONA DE IMPRESIÓN ===== */}
-      <div className="print-area">
-        {ventaSeleccionada?.tipo === "una" && (
-          <FacturaImprimible venta={ventaSeleccionada.venta} />
-        )}
-
-        {ventaSeleccionada?.tipo === "multiple" &&
-          ventaSeleccionada.ventas.map((v) => (
-            <FacturaImprimible key={v._id} venta={v} />
-          ))}
+      {/* ===== ZONA OCULTA DE IMPRESIÓN ===== */}
+      <div style={{ display: "none" }}>
+        <div ref={printRef}>
+          {ventaSeleccionada &&
+            (ventaSeleccionada.multiple ? (
+              ventaSeleccionada.ventas.map((v) => (
+                <FacturaImprimible key={v._id} venta={v} />
+              ))
+            ) : (
+              <FacturaImprimible venta={ventaSeleccionada} />
+            ))}
+        </div>
       </div>
     </div>
   );
