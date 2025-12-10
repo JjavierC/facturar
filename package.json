@@ -4,5 +4,9 @@
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.14"
+  },
+  "dependencies": {
+    "jspdf": "^3.0.4",
+    "jspdf-autotable": "^5.0.2"
   }
 }
