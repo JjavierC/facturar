@@ -1,147 +1,241 @@
-// src/pages/Reportes.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 
 function Reportes() {
   const [ventas, setVentas] = useState([]);
-  const [totalGananciasGlobal, setTotalGananciasGlobal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
-  // Estados para los filtros
+
+  // filtros
   const [idBusqueda, setIdBusqueda] = useState("");
   const [fechaBusqueda, setFechaBusqueda] = useState("");
 
+  // 🔐 control admin (simple y efectivo)
+  const usuario = JSON.parse(localStorage.getItem("usuario"));
+  const esAdmin = usuario?.role === "admin";
+
   useEffect(() => {
-    axios.get("/.netlify/functions/get-ventas")
+    axios
+      .get("/.netlify/functions/get-ventas")
       .then((res) => {
         setVentas(res.data.ventas || []);
-        // Guardamos el total de ganancias de TODAS las ventas
-        setTotalGananciasGlobal(res.data.totalGanancias || 0);
         setLoading(false);
       })
       .catch((err) => {
-        console.error("Error al cargar reportes:", err);
-        setError("Error al cargar reportes. Verifique conexión.");
+        console.error(err);
+        setError("Error al cargar reportes");
         setLoading(false);
       });
   }, []);
 
-  // --- LÓGICA DE FILTROS ---
-  const reportesFiltrados = ventas.filter((v) => {
+  // =========================
+  // FILTROS (NO ANULADAS)
+  // =========================
+  const ventasValidas = ventas.filter((v) => !v.anulada);
+
+  const reportesFiltrados = ventasValidas.filter((v) => {
     const idMatch = idBusqueda
-      ? v._id.toLowerCase().includes(idBusqueda.toLowerCase())
+      ? v._id.toString().toLowerCase().includes(idBusqueda.toLowerCase())
       : true;
+
     const fechaMatch = fechaBusqueda
-      ? new Date(v.fecha_venta || v.fecha).toISOString().slice(0, 10) === fechaBusqueda
+      ? new Date(v.fecha).toISOString().slice(0, 10) === fechaBusqueda
       : true;
+
     return idMatch && fechaMatch;
   });
 
-  // --- LÓGICA DE ESTADÍSTICAS (BASADA EN FILTROS) ---
-  const totalVentasFiltradas = reportesFiltrados.length;
-  const sumaTotalFiltrada = reportesFiltrados.reduce((sum, v) => sum + (v.total || 0), 0);
-  const totalGananciaFiltrada = reportesFiltrados.reduce((sum, v) => sum + (v.total_ganancias || 0), 0);
-  
-  const figmaFont = { fontFamily: 'Inter, sans-serif' };
+  // =========================
+  // ESTADÍSTICAS
+  // =========================
+  const totalVentas = reportesFiltrados.length;
+  const totalIngresos = reportesFiltrados.reduce(
+    (acc, v) => acc + Number(v.total || 0),
+    0
+  );
+  const totalGanancias = reportesFiltrados.reduce(
+    (acc, v) => acc + Number(v.total_ganancias || 0),
+    0
+  );
 
-  if (loading) return <div className="text-center p-10 text-2xl" style={figmaFont}>Cargando...</div>;
-  if (error) return <div className="text-center p-10 text-red-500 text-2xl" style={figmaFont}>{error}</div>;
+  // =========================
+  // ANULAR VENTA (ADMIN)
+  // =========================
+  const anularVenta = async (ventaId) => {
+    if (!window.confirm("¿Seguro que deseas anular esta venta?")) return;
+
+    await axios.post("/.netlify/functions/anular-venta", { ventaId });
+
+    setVentas((prev) =>
+      prev.map((v) =>
+        v._id === ventaId ? { ...v, anulada: true } : v
+      )
+    );
+  };
+
+  // =========================
+  // EXPORTAR PDF
+  // =========================
+  const exportarPDF = () => {
+    const doc = new jsPDF();
+    doc.text("Reporte de Ventas", 14, 15);
+
+    const rows = reportesFiltrados.map((v) => [
+      v._id.toString().slice(-6),
+      new Date(v.fecha).toLocaleString(),
+      v.items.length,
+      `$${v.total}`,
+      `$${v.total_ganancias}`,
+    ]);
+
+    doc.autoTable({
+      startY: 25,
+      head: [["ID", "Fecha", "Items", "Total", "Ganancia"]],
+      body: rows,
+    });
+
+    doc.save("reporte_ventas.pdf");
+  };
+
+  if (loading) return <div className="p-10 text-center text-xl">Cargando...</div>;
+  if (error) return <div className="p-10 text-center text-red-500">{error}</div>;
 
   return (
-    // CAMBIO: Quitado el ancho fijo. Ahora es responsive.
-    <div className="w-full min-h-[982px] bg-white mx-auto p-4 md:p-8" style={figmaFont}>
-      
-      {}
-      <header className="w-full max-w-[1456px] mx-auto h-[58px] bg-[#fcfcfc] rounded-lg flex justify-center items-center">
-        <h1 className="text-3xl md:text-4xl font-normal text-white">
-          VENTAS
-        </h1>
-      </header>
-      
-      {/* CAMBIO: Tarjetas de estadísticas (Funcionales) */}
-      <section className="max-w-6xl mx-auto my-8 grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div className="bg-gray-50 rounded-lg p-6 shadow-md border-l-4 border-cyan-400">
-          <h3 className="text-gray-500 text-sm">Total Ventas (Filtradas)</h3>
-          <p className="text-3xl font-bold text-gray-800 mt-1">{totalVentasFiltradas}</p>
+    <div className="p-6 md:p-10 bg-gray-100 min-h-screen">
+      <h1 className="text-3xl font-bold mb-6 text-center">Reportes de Ventas</h1>
+
+      {/* ======= ESTADÍSTICAS ======= */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+        <div className="bg-white p-5 rounded shadow">
+          <p className="text-gray-500">Ventas</p>
+          <p className="text-3xl font-bold">{totalVentas}</p>
         </div>
-        <div className="bg-gray-50 rounded-lg p-6 shadow-md border-l-4 border-green-400">
-          <h3 className="text-gray-500 text-sm">Ingresos (Filtrados)</h3>
-          <p className="text-3xl font-bold text-green-600 mt-1">
-            ${sumaTotalFiltrada.toLocaleString()}
+        <div className="bg-white p-5 rounded shadow">
+          <p className="text-gray-500">Ingresos</p>
+          <p className="text-3xl font-bold text-green-600">
+            ${totalIngresos.toLocaleString()}
           </p>
         </div>
-        <div className="bg-gray-50 rounded-lg p-6 shadow-md border-l-4 border-yellow-400">
-          <h3 className="text-gray-500 text-sm">Ganancia (Filtrada)</h3>
-          <p className="text-3xl font-bold text-yellow-600 mt-1">
-            ${totalGananciaFiltrada.toLocaleString()}
+        <div className="bg-white p-5 rounded shadow">
+          <p className="text-gray-500">Ganancia</p>
+          <p className="text-3xl font-bold text-yellow-600">
+            ${totalGanancias.toLocaleString()}
           </p>
         </div>
-      </section>
+      </div>
 
-      {/* CAMBIO: Filtros (Funcionales) */}
-      <section className="max-w-6xl mx-auto my-8 bg-gray-50 rounded-lg shadow-md p-6 flex flex-wrap gap-4 justify-between">
-        <div className="flex items-center space-x-3 w-full sm:w-auto">
-          <label className="font-semibold text-gray-600 text-sm">Buscar por ID Venta:</label>
-          <input
-            type="text"
-            value={idBusqueda}
-            onChange={(e) => setIdBusqueda(e.target.value)}
-            placeholder="Ej: 68f6dff7..."
-            className="border border-gray-300 rounded-lg px-3 py-2 w-56 focus:ring-2 focus:ring-blue-500 outline-none"
-          />
-        </div>
-        <div className="flex items-center space-x-3 w-full sm:w-auto">
-          <label className="font-semibold text-gray-600 text-sm">Filtrar por fecha:</label>
-          <input
-            type="date"
-            value={fechaBusqueda}
-            onChange={(e) => setFechaBusqueda(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
-          />
-        </div>
-      </section>
+      {/* ======= FILTROS ======= */}
+      <div className="bg-white p-4 rounded shadow flex flex-wrap gap-4 mb-6">
+        <input
+          type="text"
+          placeholder="Buscar por ID"
+          value={idBusqueda}
+          onChange={(e) => setIdBusqueda(e.target.value)}
+          className="border px-3 py-2 rounded"
+        />
+        <input
+          type="date"
+          value={fechaBusqueda}
+          onChange={(e) => setFechaBusqueda(e.target.value)}
+          className="border px-3 py-2 rounded"
+        />
 
-      {/* Tabla de Ventas (Estilo Figma, pero con datos reales) */}
-      <section className="w-full max-w-[1462px] mx-auto mt-8 overflow-x-auto">
-        <table className="tabla-figma w-full border-collapse border border-black">
-          <thead>
-            <tr className="h-[55px] bg-gray-50">
-              <th className="border border-black text-2xl font-normal text-black text-center p-2">ID Venta</th>
-              <th className="border border-black text-2xl font-normal text-black text-center p-2">Fecha</th>
-              <th className="border border-black text-2xl font-normal text-black text-center p-2">Items</th>
-              <th className="border border-black text-2xl font-normal text-black text-center p-2">Total Venta</th>
-              <th className="border border-black text-2xl font-normal text-black text-center p-2">Total Ganancia</th>
+        <button
+          onClick={exportarPDF}
+          className="ml-auto bg-indigo-600 text-white px-4 py-2 rounded"
+        >
+          Exportar PDF
+        </button>
+      </div>
+
+      {/* ======= TABLA VENTAS ======= */}
+      <div className="overflow-x-auto bg-white rounded shadow">
+        <table className="w-full border">
+          <thead className="bg-gray-50">
+            <tr>
+              <th>ID</th>
+              <th>Fecha</th>
+              <th>Items</th>
+              <th>Total</th>
+              <th>Ganancia</th>
+              {esAdmin && <th>Acción</th>}
             </tr>
           </thead>
           <tbody>
             {reportesFiltrados.map((v) => (
-              <tr key={v._id} className="h-[60px] even:bg-white odd:bg-gray-50">
-                <td className="border border-black text-lg font-normal text-black text-center p-2 truncate max-w-[150px]" title={v._id}>
-                  {v._id.substring(v._id.length - 6)} {/* Mostramos últimos 6 dígitos */}
+              <tr key={v._id}>
+                <td className="text-center">{v._id.toString().slice(-6)}</td>
+                <td className="text-center">
+                  {new Date(v.fecha).toLocaleString()}
                 </td>
-                <td className="border border-black text-lg font-normal text-black text-center p-2">
-                  {new Date(v.fecha_venta || v.fecha).toLocaleString()}
+                <td className="text-center">{v.items.length}</td>
+                <td className="text-center text-green-600 font-bold">
+                  ${v.total}
                 </td>
-                <td className="border border-black text-lg font-normal text-black text-center p-2">
-                  {v.items.length}
+                <td className="text-center text-yellow-600 font-bold">
+                  ${v.total_ganancias}
                 </td>
-                <td className="border border-black text-lg font-bold text-green-700 text-center p-2">
-                  ${v.total?.toLocaleString()}
-                </td>
-                <td className="border border-black text-lg font-bold text-yellow-700 text-center p-2">
-                  ${v.total_ganancias?.toLocaleString()}
-                </td>
+                {esAdmin && (
+                  <td className="text-center">
+                    <button
+                      onClick={() => anularVenta(v._id)}
+                      className="text-red-600 hover:underline"
+                    >
+                      Anular
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
         </table>
+
         {reportesFiltrados.length === 0 && (
-          <div className="w-full text-center p-10 text-2xl text-gray-500 border border-t-0 border-black">
-            No se encontraron ventas con esos filtros.
+          <div className="p-6 text-center text-gray-500">
+            No hay ventas con esos filtros
           </div>
         )}
-      </section>
+      </div>
+
+      {/* ======= VENTAS ANULADAS (ADMIN) ======= */}
+      {esAdmin && (
+        <div className="mt-12">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">
+            Ventas Anuladas
+          </h2>
+
+          <table className="w-full border bg-red-50">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Fecha</th>
+                <th>Total</th>
+                <th>Ganancia</th>
+                <th>Fecha Anulación</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ventas
+                .filter((v) => v.anulada)
+                .map((v) => (
+                  <tr key={v._id}>
+                    <td className="text-center">{v._id.toString().slice(-6)}</td>
+                    <td className="text-center">
+                      {new Date(v.fecha).toLocaleString()}
+                    </td>
+                    <td className="text-center">${v.total}</td>
+                    <td className="text-center">${v.total_ganancias}</td>
+                    <td className="text-center">
+                      {new Date(v.fecha_anulacion).toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
