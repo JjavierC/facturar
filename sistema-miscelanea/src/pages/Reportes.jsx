@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
-import FacturaImprimible from "./FacturaImprimible";
+import FacturaImprimible from "../components/FacturaImprimible";
 
 function Reportes() {
   const [ventas, setVentas] = useState([]);
