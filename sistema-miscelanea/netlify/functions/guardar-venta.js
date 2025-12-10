@@ -30,52 +30,60 @@ exports.handler = async (event) => {
 
     client = await MongoClient.connect(MONGODB_URI);
 
-    // ==========================================
-    // CAMBIO CRÍTICO:
-    // Usar la misma BD y colección que Inventario.jsx
-    // ==========================================
-    const db = client.db("miscelanea");     // antes: facturacion
-    const productosColl = db.collection("inventario"); // antes: productos
+    // ✅ MISMA BD Y COLECCIONES (NO SE TOCA)
+    const db = client.db("miscelanea");
+    const productosColl = db.collection("inventario");
     const ventasColl = db.collection("ventas");
 
     // ===================================================
-    // VALIDAR ITEMS Y ACEPTAR CUALQUIER TIPO DE ID
+    // ✅ ENRIQUECER ITEMS + CALCULAR GANANCIAS
     // ===================================================
-    const enrichedItems = items.map((item) => {
-      let productoId = null;
+    let totalGanancias = 0;
 
-      if (item.producto_id) {
-        productoId = ObjectId.isValid(item.producto_id)
-          ? new ObjectId(item.producto_id)
-          : item.producto_id;
-      }
+    const enrichedItems = items.map((item) => {
+      const productoId = ObjectId.isValid(item.producto_id)
+        ? new ObjectId(item.producto_id)
+        : item.producto_id;
+
+      const cantidad = Number(item.cantidad) || 0;
+      const precio = Number(item.precio) || 0;
+      const costo = Number(item.costo) || 0;
+
+      const gananciaUnit = precio - costo;
+      const gananciaTotal = gananciaUnit * cantidad;
+
+      totalGanancias += gananciaTotal;
 
       return {
         producto_id: productoId,
         nombre: item.nombre,
-        cantidad: Number(item.cantidad) || 0,
-        precio: Number(item.precio) || 0,
-        subtotal:
-          (Number(item.cantidad) || 0) * (Number(item.precio) || 0),
+        cantidad,
+        precio,
+        costo,
+        subtotal: cantidad * precio,
+        ganancia_unitaria: gananciaUnit,
+        ganancia_total: gananciaTotal,
       };
     });
 
     // ===================================================
-    // GUARDAR LA VENTA EN coleccion ventas
+    // ✅ GUARDAR VENTA CON GANANCIAS
     // ===================================================
     const nuevaVenta = {
       items: enrichedItems,
       subtotal,
       iva,
       total,
+      total_ganancias: totalGanancias, // ✅ CLAVE
       id_usuario,
+      anulada: false,                   // ✅ futuro (anular venta)
       fecha: new Date(),
     };
 
     const result = await ventasColl.insertOne(nuevaVenta);
 
     // ===================================================
-    // RESTAR EL STOCK EN miscelanea.inventario
+    // ✅ RESTAR STOCK (IGUAL QUE ANTES)
     // ===================================================
     for (const item of enrichedItems) {
       if (!item.producto_id) continue;
@@ -91,6 +99,7 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         message: "Venta registrada correctamente.",
         ventaId: result.insertedId,
+        total_ganancias: totalGanancias,
       }),
     };
   } catch (error) {
