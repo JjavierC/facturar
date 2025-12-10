@@ -11,10 +11,15 @@ function Reportes() {
   const [idBusqueda, setIdBusqueda] = useState("");
   const [fechaBusqueda, setFechaBusqueda] = useState("");
 
-  // ✅ FIX localStorage seguro
-  const usuarioRaw = localStorage.getItem("usuario");
-  const usuario = usuarioRaw ? JSON.parse(usuarioRaw) : null;
-  const esAdmin = usuario?.role === "admin";
+  // ✅ CONTROL ADMIN SEGURO
+  let esAdmin = false;
+  try {
+    const usuarioRaw = localStorage.getItem("usuario");
+    if (usuarioRaw) {
+      const usuario = JSON.parse(usuarioRaw);
+      esAdmin = usuario?.role === "admin";
+    }
+  } catch (_) {}
 
   useEffect(() => {
     axios
@@ -23,7 +28,8 @@ function Reportes() {
         setVentas(res.data.ventas || []);
         setLoading(false);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error(err);
         setError("Error al cargar reportes");
         setLoading(false);
       });
@@ -33,7 +39,7 @@ function Reportes() {
 
   const reportesFiltrados = ventasValidas.filter((v) => {
     const idMatch = idBusqueda
-      ? v._id.toString().includes(idBusqueda)
+      ? v._id.toString().toLowerCase().includes(idBusqueda.toLowerCase())
       : true;
 
     const fechaVenta = v.fecha || v.fecha_venta;
@@ -47,10 +53,6 @@ function Reportes() {
   const totalVentas = reportesFiltrados.length;
   const totalIngresos = reportesFiltrados.reduce(
     (acc, v) => acc + Number(v.total || 0),
-    0
-  );
-  const totalGanancias = reportesFiltrados.reduce(
-    (acc) => acc,
     0
   );
 
@@ -70,18 +72,15 @@ function Reportes() {
     const doc = new jsPDF();
     doc.text("Reporte de Ventas", 14, 15);
 
-    const rows = reportesFiltrados.map((v) => [
-      v._id.toString().slice(-6),
-      new Date(v.fecha || v.fecha_venta).toLocaleString(),
-      v.items.length,
-      `$${v.total}`,
-      `$0`,
-    ]);
-
     doc.autoTable({
       startY: 25,
-      head: [["ID", "Fecha", "Items", "Total", "Ganancia"]],
-      body: rows,
+      head: [["ID", "Fecha", "Items", "Total"]],
+      body: reportesFiltrados.map((v) => [
+        v._id.toString().slice(-6),
+        new Date(v.fecha || v.fecha_venta).toLocaleString(),
+        v.items.length,
+        `$${v.total}`,
+      ]),
     });
 
     doc.save("reporte_ventas.pdf");
@@ -94,12 +93,26 @@ function Reportes() {
     <div className="p-6 bg-gray-100 min-h-screen">
       <h1 className="text-3xl font-bold mb-6 text-center">Reportes</h1>
 
-      <button
-        onClick={exportarPDF}
-        className="mb-4 bg-indigo-600 text-white px-4 py-2 rounded"
-      >
-        Exportar PDF
-      </button>
+      <div className="flex gap-4 mb-6">
+        <input
+          placeholder="Buscar ID"
+          value={idBusqueda}
+          onChange={(e) => setIdBusqueda(e.target.value)}
+          className="border p-2 rounded"
+        />
+        <input
+          type="date"
+          value={fechaBusqueda}
+          onChange={(e) => setFechaBusqueda(e.target.value)}
+          className="border p-2 rounded"
+        />
+        <button
+          onClick={exportarPDF}
+          className="ml-auto bg-indigo-600 text-white px-4 py-2 rounded"
+        >
+          Exportar PDF
+        </button>
+      </div>
 
       <table className="w-full bg-white border">
         <thead>
