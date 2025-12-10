@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import FacturaImprimible from '../components/FacturaImprimible';
+
 
 function safeDateString(d) {
   if (!d) return "—";
