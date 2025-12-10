@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
-import jsPDF from "jspdf";
-import "jspdf-autotable";
+import FacturaImprimible from "./FacturaImprimible";
 
 function Reportes() {
   const [ventas, setVentas] = useState([]);
@@ -11,7 +10,14 @@ function Reportes() {
   const [idBusqueda, setIdBusqueda] = useState("");
   const [fechaBusqueda, setFechaBusqueda] = useState("");
 
-  // ✅ ADMIN (simple)
+  // ✅ rango fechas PDF
+  const [fechaInicio, setFechaInicio] = useState("");
+  const [fechaFin, setFechaFin] = useState("");
+
+  // ✅ venta a imprimir
+  const [ventaSeleccionada, setVentaSeleccionada] = useState(null);
+  const printRef = useRef();
+
   const esAdmin = true;
 
   useEffect(() => {
@@ -55,7 +61,7 @@ function Reportes() {
   );
 
   // ======================
-  // ANULAR VENTA
+  // ANULAR
   // ======================
   const anularVenta = async (id) => {
     if (!window.confirm("¿Seguro que deseas anular esta venta?")) return;
@@ -65,35 +71,48 @@ function Reportes() {
     setVentas((prev) =>
       prev.map((v) =>
         v._id === id
-          ? {
-              ...v,
-              anulada: true,
-              fecha_anulacion: new Date(),
-            }
+          ? { ...v, anulada: true, fecha_anulacion: new Date() }
           : v
       )
     );
   };
 
   // ======================
-  // EXPORTAR PDF
+  // IMPRIMIR UNA VENTA
   // ======================
-  const exportarPDF = () => {
-    const doc = new jsPDF();
-    doc.text("Reporte de Ventas", 14, 15);
+  const imprimirVenta = (venta) => {
+    setVentaSeleccionada(venta);
+    setTimeout(() => {
+      window.print();
+    }, 100);
+  };
 
-    doc.autoTable({
-      startY: 25,
-      head: [["ID", "Fecha", "Items", "Total"]],
-      body: ventasFiltradas.map((v) => [
-        v._id.toString().slice(-6),
-        new Date(v.fecha || v.fecha_venta).toLocaleString(),
-        v.items.length,
-        `$${v.total}`,
-      ]),
+  // ======================
+  // IMPRIMIR POR RANGO
+  // ======================
+  const imprimirPorRango = () => {
+    if (!fechaInicio || !fechaFin) {
+      alert("Selecciona ambas fechas");
+      return;
+    }
+
+    const filtradas = ventasActivas.filter((v) => {
+      const f = new Date(v.fecha || v.fecha_venta);
+      return (
+        f >= new Date(fechaInicio) &&
+        f <= new Date(fechaFin + "T23:59:59")
+      );
     });
 
-    doc.save("reporte_ventas.pdf");
+    if (filtradas.length === 0) {
+      alert("No hay ventas en ese rango");
+      return;
+    }
+
+    setVentaSeleccionada({ multiple: true, ventas: filtradas });
+    setTimeout(() => {
+      window.print();
+    }, 100);
   };
 
   if (loading) return <div className="p-10 text-center">Cargando...</div>;
@@ -106,7 +125,7 @@ function Reportes() {
       </h1>
 
       {/* ===== RESUMEN ===== */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-2 gap-6 mb-8">
         <div className="bg-white p-5 rounded shadow">
           <p className="text-gray-500">Ventas</p>
           <p className="text-3xl font-bold">{totalVentas}</p>
@@ -120,10 +139,10 @@ function Reportes() {
       </div>
 
       {/* ===== FILTROS ===== */}
-      <div className="bg-white p-4 rounded shadow flex flex-wrap gap-4 mb-6">
+      <div className="bg-white p-4 rounded shadow flex flex-wrap gap-3 mb-6">
         <input
-          className="border px-3 py-2 rounded w-44"
-          placeholder="Buscar por ID"
+          className="border px-3 py-2 rounded"
+          placeholder="Buscar ID"
           value={idBusqueda}
           onChange={(e) => setIdBusqueda(e.target.value)}
         />
@@ -133,47 +152,63 @@ function Reportes() {
           value={fechaBusqueda}
           onChange={(e) => setFechaBusqueda(e.target.value)}
         />
+
+        <input
+          type="date"
+          className="border px-3 py-2 rounded ml-auto"
+          value={fechaInicio}
+          onChange={(e) => setFechaInicio(e.target.value)}
+        />
+        <input
+          type="date"
+          className="border px-3 py-2 rounded"
+          value={fechaFin}
+          onChange={(e) => setFechaFin(e.target.value)}
+        />
+
         <button
-          onClick={exportarPDF}
-          className="ml-auto bg-indigo-600 hover:bg-indigo-700 transition text-white px-5 py-2 rounded shadow"
+          onClick={imprimirPorRango}
+          className="bg-indigo-600 text-white px-4 py-2 rounded"
         >
-          📄 Exportar PDF
+          📄 PDF Rango
         </button>
       </div>
 
-      {/* ===== TABLA ACTIVAS ===== */}
-      <div className="overflow-x-auto bg-white rounded shadow">
-        <table className="w-full border-collapse">
+      {/* ===== TABLA ===== */}
+      <div className="bg-white rounded shadow overflow-x-auto">
+        <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
-              <th className="p-3 border">ID</th>
-              <th className="p-3 border">Fecha</th>
-              <th className="p-3 border">Items</th>
-              <th className="p-3 border">Total</th>
-              {esAdmin && <th className="p-3 border">Acción</th>}
+              <th className="p-2 border">ID</th>
+              <th className="p-2 border">Fecha</th>
+              <th className="p-2 border">Items</th>
+              <th className="p-2 border">Total</th>
+              <th className="p-2 border">PDF</th>
+              {esAdmin && <th className="p-2 border">Acción</th>}
             </tr>
           </thead>
           <tbody>
             {ventasFiltradas.map((v) => (
-              <tr
-                key={v._id}
-                className="text-center hover:bg-gray-50 transition"
-              >
-                <td className="p-2 border">
-                  {v._id.toString().slice(-6)}
-                </td>
-                <td className="p-2 border">
+              <tr key={v._id} className="text-center">
+                <td className="border p-2">{v._id.toString().slice(-6)}</td>
+                <td className="border p-2">
                   {new Date(v.fecha || v.fecha_venta).toLocaleString()}
                 </td>
-                <td className="p-2 border">{v.items.length}</td>
-                <td className="p-2 border text-green-600 font-semibold">
-                  ${v.total}
+                <td className="border p-2">{v.items.length}</td>
+                <td className="border p-2 text-green-600">${v.total}</td>
+                <td className="border p-2">
+                  <button
+                    onClick={() => imprimirVenta(v)}
+                    className="px-3 py-1 bg-blue-100 text-blue-600 rounded"
+                  >
+                    📄
+                  </button>
                 </td>
                 {esAdmin && (
-                  <td className="p-2 border">
+                  <td className="border p-2">
                     <button
                       onClick={() => anularVenta(v._id)}
-                      className="px-3 py-1 rounded bg-red-100 text-red-600 hover:bg-red-200 transition"
+                      className="px-3 py-1 bg-red-100 text-red-600 rounded"
                     >
                       Anular
                     </button>
@@ -183,62 +218,21 @@ function Reportes() {
             ))}
           </tbody>
         </table>
-
-        {ventasFiltradas.length === 0 && (
-          <div className="p-6 text-center text-gray-500">
-            No hay ventas con esos filtros
-          </div>
-        )}
       </div>
 
-      {/* ===== ANULADAS ===== */}
-      {esAdmin && (
-        <div className="mt-12">
-          <h2 className="text-xl font-semibold text-red-600 mb-4">
-            Ventas Anuladas
-          </h2>
-
-          <div className="bg-white rounded shadow overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead className="bg-red-50">
-                <tr>
-                  <th className="p-3 border">ID</th>
-                  <th className="p-3 border">Fecha</th>
-                  <th className="p-3 border">Total</th>
-                  <th className="p-3 border">Fecha Anulación</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ventas
-                  .filter((v) => v.anulada)
-                  .map((v) => (
-                    <tr
-                      key={v._id}
-                      className="text-center hover:bg-red-50 transition"
-                    >
-                      <td className="p-2 border">
-                        {v._id.toString().slice(-6)}
-                      </td>
-                      <td className="p-2 border">
-                        {new Date(
-                          v.fecha || v.fecha_venta
-                        ).toLocaleString()}
-                      </td>
-                      <td className="p-2 border">${v.total}</td>
-                      <td className="p-2 border">
-                        {v.fecha_anulacion
-                          ? new Date(
-                              v.fecha_anulacion
-                            ).toLocaleString()
-                          : "—"}
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
+      {/* ===== ZONA OCULTA DE IMPRESIÓN ===== */}
+      <div style={{ display: "none" }}>
+        <div ref={printRef}>
+          {ventaSeleccionada &&
+            (ventaSeleccionada.multiple ? (
+              ventaSeleccionada.ventas.map((v) => (
+                <FacturaImprimible key={v._id} venta={v} />
+              ))
+            ) : (
+              <FacturaImprimible venta={ventaSeleccionada} />
+            ))}
         </div>
-      )}
+      </div>
     </div>
   );
 }
