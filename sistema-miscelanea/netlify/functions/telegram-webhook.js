@@ -1,172 +1,162 @@
-const { MongoClient } = require("mongodb");
 const axios = require("axios");
+const { MongoClient } = require("mongodb");
 
-const MONGODB_URI = process.env.MONGODB_URI;
-const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
-const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
-
-// 📌 Función para enviar mensajes a Telegram
-async function sendMessage(text) {
-  try {
-    await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
-      chat_id: TELEGRAM_CHAT_ID,
-      text,
-      parse_mode: "Markdown"
-    });
-  } catch (err) {
-    console.error("Error enviando mensaje a Telegram:", err.response?.data || err);
-  }
-}
+const TOKEN = process.env.TELEGRAM_TOKEN;
+const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+const MONGO_URI = process.env.MONGODB_URI;
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Método no permitido" };
   }
 
-  const update = JSON.parse(event.body || "{}");
-
-  if (!update.message || !update.message.text) {
-    return { statusCode: 200, body: "ok" };
-  }
-
-  const chatMessage = update.message.text.trim().toLowerCase();
-  let client;
-
+  let body;
   try {
-    client = await MongoClient.connect(MONGODB_URI);
-    const db = client.db("miscelanea");
-
-    const inventario = db.collection("inventario");
-    const ventas = db.collection("ventas");
-
-    // ======================================================
-    // 1️⃣ /start — Lista los comandos
-    // ======================================================
-    if (chatMessage === "/start") {
-      await sendMessage(
-        "👋 *Bienvenido al Bot de Miscelánea La Económica*\n\n" +
-        "Comandos disponibles:\n" +
-        "• /ventas_hoy – Ventas del día\n" +
-        "• /stock NOMBRE – Ver stock de un producto\n" +
-        "• /bajo_stock – Productos con poco stock\n" +
-        "• /ultima_venta – Última venta registrada"
-      );
-      return { statusCode: 200, body: "ok" };
-    }
-
-    // ======================================================
-    // 2️⃣ /ventas_hoy
-    // ======================================================
-    if (chatMessage === "/ventas_hoy") {
-      const inicioDia = new Date();
-      inicioDia.setHours(0, 0, 0, 0);
-
-      const ventasHoy = await ventas.find({
-        fecha: { $gte: inicioDia },
-        anulada: false
-      }).toArray();
-
-      const total = ventasHoy.reduce((acc, v) => acc + (v.total || 0), 0);
-
-      await sendMessage(
-        `📅 *Ventas de hoy*\n\n` +
-        `🧾 Ventas realizadas: *${ventasHoy.length}*\n` +
-        `💰 Total vendido: *$${total}*`
-      );
-
-      return { statusCode: 200, body: "ok" };
-    }
-
-    // ======================================================
-    // 3️⃣ /stock NOMBRE
-    // ======================================================
-    if (chatMessage.startsWith("/stock ")) {
-      const nombre = chatMessage.replace("/stock ", "").trim();
-
-      const producto = await inventario.findOne({
-        nombre: { $regex: new RegExp(nombre, "i") }
-      });
-
-      if (!producto) {
-        await sendMessage(`❌ No encontré el producto *${nombre}*`);
-        return { statusCode: 200, body: "ok" };
-      }
-
-      await sendMessage(
-        `📦 *Stock de ${producto.nombre}*\n` +
-        `📉 Stock actual: *${producto.stock}*\n` +
-        `⚠ Stock mínimo: *${producto.stock_min}*`
-      );
-
-      return { statusCode: 200, body: "ok" };
-    }
-
-    // ======================================================
-    // 4️⃣ /bajo_stock – FILTRA TODO EL INVENTARIO (CORREGIDO)
-    // ======================================================
-    if (chatMessage === "/bajo_stock") {
-      const productos = await inventario.find().toArray();
-
-      const bajos = productos.filter(
-        (p) => p.stock !== undefined && p.stock <= p.stock_min
-      );
-
-      if (bajos.length === 0) {
-        await sendMessage("✔ Todos los productos tienen stock suficiente.");
-        return { statusCode: 200, body: "ok" };
-      }
-
-      let msg = "⚠ *Productos con stock bajo:*\n\n";
-
-      bajos.forEach((p) => {
-        msg += `• *${p.nombre}*: ${p.stock} unidades (mínimo ${p.stock_min})\n`;
-      });
-
-      await sendMessage(msg);
-      return { statusCode: 200, body: "ok" };
-    }
-
-    // ======================================================
-    // 5️⃣ /ultima_venta
-    // ======================================================
-    if (chatMessage === "/ultima_venta") {
-      const ultima = await ventas.find({})
-        .sort({ fecha: -1 })
-        .limit(1)
-        .toArray();
-
-      if (ultima.length === 0) {
-        await sendMessage("❌ No hay ventas registradas.");
-        return { statusCode: 200, body: "ok" };
-      }
-
-      const venta = ultima[0];
-
-      let msg =
-        `🧾 *Última Venta*\n\n` +
-        `📅 Fecha: ${venta.fecha.toLocaleString()}\n` +
-        `💰 Total: *$${venta.total}*\n` +
-        `📦 Productos:\n`;
-
-      venta.items.forEach((i) => {
-        msg += `• ${i.nombre} x${i.cantidad} → $${i.subtotal}\n`;
-      });
-
-      await sendMessage(msg);
-      return { statusCode: 200, body: "ok" };
-    }
-
-    // ======================================================
-    // ⚠️ SI EL COMANDO NO EXISTE
-    // ======================================================
-    await sendMessage("❓ Comando no reconocido. Usa /start para ver la lista.");
-
-    return { statusCode: 200, body: "ok" };
-
-  } catch (error) {
-    console.error("ERROR EN WEBHOOK:", error);
-    return { statusCode: 500, body: "Error interno" };
-  } finally {
-    if (client) await client.close();
+    body = JSON.parse(event.body);
+  } catch {
+    return { statusCode: 400, body: "Body inválido" };
   }
+
+  const message = body.message?.text?.trim() || "";
+  const sender = body.message?.from?.id;
+
+  if (!sender) {
+    return { statusCode: 200, body: "No message" };
+  }
+
+  // ===============================
+  // 📌 FUNCIÓN PARA ENVIAR MENSAJES
+  // ===============================
+  async function send(text) {
+    await axios.post(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
+      chat_id: CHAT_ID,
+      text,
+      parse_mode: "Markdown",
+    });
+  }
+
+  // ===============================
+  // 📌 CONECTAR A MONGO
+  // ===============================
+  const client = new MongoClient(MONGO_URI);
+  await client.connect();
+  const db = client.db("miscelanea");
+  const inventario = db.collection("inventario");
+  const ventas = db.collection("ventas");
+
+  // ===============================
+  // 📌 COMANDO: VER STOCK
+  // ===============================
+  if (message === "/stock") {
+    const productos = await inventario.find().toArray();
+
+    let msg = "📦 *Stock actual:*\n\n";
+    productos.forEach((p) => {
+      msg += `• *${p.nombre}*: ${p.stock}\n`;
+    });
+
+    await send(msg);
+    await client.close();
+    return { statusCode: 200, body: "OK" };
+  }
+
+  // ===============================
+  // 📌 COMANDO: VENTAS DEL DÍA
+  // ===============================
+  if (message === "/ventas_hoy") {
+    const inicio = new Date();
+    inicio.setHours(0, 0, 0, 0);
+
+    const fin = new Date();
+    fin.setHours(23, 59, 59, 999);
+
+    const ventasHoy = await ventas
+      .find({ fecha: { $gte: inicio, $lte: fin }, anulada: false })
+      .toArray();
+
+    const total = ventasHoy.reduce((acc, v) => acc + v.total, 0);
+
+    let msg =
+      `📅 *Ventas del día:*\n\n` +
+      `🧾 Número de ventas: *${ventasHoy.length}*\n` +
+      `💰 Total vendido: *$${total}*\n`;
+
+    await send(msg);
+    await client.close();
+    return { statusCode: 200, body: "OK" };
+  }
+
+  // ===============================
+  // 📌 COMANDO: ÚLTIMA VENTA
+  // ===============================
+  if (message === "/ultima_venta") {
+    const venta = await ventas.findOne({ anulada: false }, { sort: { fecha: -1 } });
+
+    if (!venta) {
+      await send("No hay ventas registradas.");
+      await client.close();
+      return {};
+    }
+
+    // Ajustar fecha a zona horaria de Colombia
+    const fechaLocal = venta.fecha.toLocaleString("es-CO", {
+      timeZone: "America/Bogota",
+    });
+
+    let msg =
+      `🧾 *Última Venta*\n\n` +
+      `📅 Fecha: *${fechaLocal}*\n` +
+      `💰 Total: *$${venta.total}*\n\n` +
+      `📦 *Productos:*\n`;
+
+    venta.items.forEach((i) => {
+      msg += `• ${i.nombre}: ${i.cantidad}u\n`;
+    });
+
+    await send(msg);
+    await client.close();
+    return { statusCode: 200, body: "OK" };
+  }
+
+  // ================================================================
+  // 📌 NOTIFICACIÓN AUTOMÁTICA: ALGO ACTUALIZÓ EL INVENTARIO O HUBO VENTA
+  //    (Netlify enviará JSON con la venta y aquí revisamos el stock)
+  // ================================================================
+  if (body.event === "venta_realizada") {
+    const items = body.items || [];
+    const productos = await inventario.find().toArray();
+
+    let alerta = "⚠️ *ALERTA DE BAJO STOCK*\n\n";
+    let hayAlertas = false;
+
+    for (const item of items) {
+      const prod = productos.find((p) => p._id.toString() === item.producto_id);
+      if (!prod) continue;
+
+      if (prod.stock <= 5) {
+        alerta += `• *${prod.nombre}*: quedan *${prod.stock}* unidades\n`;
+        hayAlertas = true;
+      }
+    }
+
+    if (hayAlertas) {
+      await send(alerta);
+    }
+
+    await client.close();
+    return { statusCode: 200, body: "OK" };
+  }
+
+  // ===============================
+  // 📌 RESPUESTA DEFAULT
+  // ===============================
+  await send(
+    "🤖 Comandos disponibles:\n\n" +
+      "• /stock – Ver stock completo\n" +
+      "• /ventas_hoy – Total vendido hoy\n" +
+      "• /ultima_venta – Última venta realizada"
+  );
+
+  await client.close();
+  return { statusCode: 200, body: "OK" };
 };
