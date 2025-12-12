@@ -1,30 +1,9 @@
 const { MongoClient, ObjectId } = require("mongodb");
+const axios = require("axios");
 
 const MONGODB_URI = process.env.MONGODB_URI;
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
-
-// ============================
-// 📌 FUNCIÓN PARA ENVIAR ALERTA A TELEGRAM
-// ============================
-async function enviarAlertaStockBajo(nombre, stock) {
-  if (!TELEGRAM_TOKEN || !TELEGRAM_CHAT_ID) {
-    console.warn("Telegram no configurado. Saltando alerta.");
-    return;
-  }
-
-  const mensaje = `⚠️ *Stock Bajo*\n\nProducto: *${nombre}*\nStock restante: *${stock}* unidades`;
-
-  await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      chat_id: TELEGRAM_CHAT_ID,
-      text: mensaje,
-      parse_mode: "Markdown",
-    }),
-  });
-}
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
@@ -47,18 +26,20 @@ exports.handler = async (event) => {
     if (!MONGODB_URI) {
       return {
         statusCode: 500,
-        body: JSON.stringify({ message: "Error: MONGODB_URI no configurada." }),
+        body: JSON.stringify({
+          message: "Error: MONGODB_URI no está configurada.",
+        }),
       };
     }
 
     client = await MongoClient.connect(MONGODB_URI);
-    const db = client.db("miscelanea");
 
+    const db = client.db("miscelanea");
     const productosColl = db.collection("inventario");
     const ventasColl = db.collection("ventas");
 
     // ===================================================
-    // 📌 ENRIQUECER ITEMS + CALCULAR GANANCIAS
+    // ENRIQUECER ITEMS + CALCULAR GANANCIAS
     // ===================================================
     let totalGanancias = 0;
 
@@ -89,7 +70,7 @@ exports.handler = async (event) => {
     });
 
     // ===================================================
-    // 📌 GUARDAR VENTA
+    // GUARDAR VENTA
     // ===================================================
     const nuevaVenta = {
       items: enrichedItems,
@@ -99,32 +80,64 @@ exports.handler = async (event) => {
       total_ganancias: totalGanancias,
       id_usuario,
       anulada: false,
-      fecha_venta: new Date(),
+      fecha: new Date(),
     };
 
     const result = await ventasColl.insertOne(nuevaVenta);
 
     // ===================================================
-    // 📌 RESTAR STOCK + ENVIAR ALERTA SI QUEDA BAJO
+    // FUNCIÓN PARA ENVIAR ALERTA DE STOCK BAJO
+    // ===================================================
+    async function enviarAlertaStockBajo(producto) {
+      if (!TELEGRAM_TOKEN || !TELEGRAM_CHAT_ID) return;
+
+      const mensaje =
+        `⚠ *ALERTA DE STOCK BAJO*\n\n` +
+        `📦 *Producto:* ${producto.nombre}\n` +
+        `📉 *Stock Actual:* ${producto.stock}\n` +
+        `📛 *ID:* ${producto._id}`;
+
+      try {
+        await axios.post(
+          `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`,
+          {
+            chat_id: TELEGRAM_CHAT_ID,
+            text: mensaje,
+            parse_mode: "Markdown",
+          }
+        );
+      } catch (err) {
+        console.error("Error enviando alerta Telegram:", err);
+      }
+    }
+
+    // ===================================================
+    // RESTAR STOCK + NOTIFICAR POR CADA PRODUCTO BAJO DE STOCK
     // ===================================================
     for (const item of enrichedItems) {
       if (!item.producto_id) continue;
 
-      // Restar stock
-      const productoActual = await productosColl.findOne({ _id: item.producto_id });
+      const productoDB = await productosColl.findOne({
+        _id: item.producto_id,
+      });
 
-      if (!productoActual) continue;
+      if (!productoDB) continue;
 
-      const nuevoStock = (productoActual.stock || 0) - Math.abs(item.cantidad);
+      const nuevoStock = productoDB.stock - Math.abs(item.cantidad);
 
+      // Actualizar stock en la base
       await productosColl.updateOne(
         { _id: item.producto_id },
         { $set: { stock: nuevoStock } }
       );
 
-      // Enviar alerta si el stock queda bajo
-      if (nuevoStock <= 3) {
-        await enviarAlertaStockBajo(item.nombre, nuevoStock);
+      // Si está por debajo del mínimo → notificar
+      const stockMinimo = productoDB.stock_min || 5; // valor por defecto
+      if (nuevoStock <= stockMinimo) {
+        await enviarAlertaStockBajo({
+          ...productoDB,
+          stock: nuevoStock,
+        });
       }
     }
 
@@ -137,7 +150,7 @@ exports.handler = async (event) => {
       }),
     };
   } catch (error) {
-    console.error("Error al registrar venta:", error);
+    console.error("Error al registrar la venta:", error);
     return {
       statusCode: 500,
       body: JSON.stringify({
