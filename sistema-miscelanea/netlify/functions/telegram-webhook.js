@@ -14,7 +14,7 @@ async function sendMessage(text) {
       parse_mode: "Markdown"
     });
   } catch (err) {
-    console.error("Error enviando mensaje:", err.response?.data || err);
+    console.error("Error enviando mensaje a Telegram:", err.response?.data || err);
   }
 }
 
@@ -25,13 +25,11 @@ exports.handler = async (event) => {
 
   const update = JSON.parse(event.body || "{}");
 
-  // Si no hay mensaje, ignoramos
   if (!update.message || !update.message.text) {
     return { statusCode: 200, body: "ok" };
   }
 
   const chatMessage = update.message.text.trim().toLowerCase();
-
   let client;
 
   try {
@@ -42,7 +40,7 @@ exports.handler = async (event) => {
     const ventas = db.collection("ventas");
 
     // ======================================================
-    // 1️⃣ /start
+    // 1️⃣ /start — Lista los comandos
     // ======================================================
     if (chatMessage === "/start") {
       await sendMessage(
@@ -50,10 +48,9 @@ exports.handler = async (event) => {
         "Comandos disponibles:\n" +
         "• /ventas_hoy – Ventas del día\n" +
         "• /stock NOMBRE – Ver stock de un producto\n" +
-        "• /bajo_stock – Productos con stock bajo\n" +
+        "• /bajo_stock – Productos con poco stock\n" +
         "• /ultima_venta – Última venta registrada"
       );
-
       return { statusCode: 200, body: "ok" };
     }
 
@@ -64,15 +61,16 @@ exports.handler = async (event) => {
       const inicioDia = new Date();
       inicioDia.setHours(0, 0, 0, 0);
 
-      const ventasHoy = await ventas
-        .find({ fecha: { $gte: inicioDia }, anulada: false })
-        .toArray();
+      const ventasHoy = await ventas.find({
+        fecha: { $gte: inicioDia },
+        anulada: false
+      }).toArray();
 
       const total = ventasHoy.reduce((acc, v) => acc + (v.total || 0), 0);
 
       await sendMessage(
         `📅 *Ventas de hoy*\n\n` +
-        `🧾 Número de ventas: ${ventasHoy.length}\n` +
+        `🧾 Ventas realizadas: *${ventasHoy.length}*\n` +
         `💰 Total vendido: *$${total}*`
       );
 
@@ -104,26 +102,27 @@ exports.handler = async (event) => {
     }
 
     // ======================================================
-    // 4️⃣ /bajo_stock
+    // 4️⃣ /bajo_stock – FILTRA TODO EL INVENTARIO (CORREGIDO)
     // ======================================================
     if (chatMessage === "/bajo_stock") {
-      const bajo = await inventario
-        .find({ $expr: { $lte: ["$stock", "$stock_min"] } })
-        .toArray();
+      const productos = await inventario.find().toArray();
 
-      if (bajo.length === 0) {
+      const bajos = productos.filter(
+        (p) => p.stock !== undefined && p.stock <= p.stock_min
+      );
+
+      if (bajos.length === 0) {
         await sendMessage("✔ Todos los productos tienen stock suficiente.");
         return { statusCode: 200, body: "ok" };
       }
 
       let msg = "⚠ *Productos con stock bajo:*\n\n";
 
-      bajo.forEach((p) => {
-        msg += `• ${p.nombre} → ${p.stock} unidades\n`;
+      bajos.forEach((p) => {
+        msg += `• *${p.nombre}*: ${p.stock} unidades (mínimo ${p.stock_min})\n`;
       });
 
       await sendMessage(msg);
-
       return { statusCode: 200, body: "ok" };
     }
 
@@ -131,8 +130,7 @@ exports.handler = async (event) => {
     // 5️⃣ /ultima_venta
     // ======================================================
     if (chatMessage === "/ultima_venta") {
-      const ultima = await ventas
-        .find({})
+      const ultima = await ventas.find({})
         .sort({ fecha: -1 })
         .limit(1)
         .toArray();
@@ -155,19 +153,18 @@ exports.handler = async (event) => {
       });
 
       await sendMessage(msg);
-
       return { statusCode: 200, body: "ok" };
     }
 
     // ======================================================
-    // SI EL COMANDO NO EXISTE
+    // ⚠️ SI EL COMANDO NO EXISTE
     // ======================================================
-    await sendMessage("❓ No reconozco ese comando. Usa /start para ver la lista.");
+    await sendMessage("❓ Comando no reconocido. Usa /start para ver la lista.");
 
     return { statusCode: 200, body: "ok" };
 
   } catch (error) {
-    console.error("ERROR WEBHOOK:", error);
+    console.error("ERROR EN WEBHOOK:", error);
     return { statusCode: 500, body: "Error interno" };
   } finally {
     if (client) await client.close();
