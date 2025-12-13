@@ -10,7 +10,7 @@ function safeDateString(d) {
   if (!d) return "—";
   const date = new Date(d);
   if (isNaN(date.getTime())) return "—";
-  return date.toLocaleString();
+  return date.toLocaleString("es-CO", { timeZone: "America/Bogota" });
 }
 
 function safeISODate(d) {
@@ -50,11 +50,32 @@ export default function Reportes() {
   }, []);
 
   /* =====================
-     Filtros
+     FILTRAR SOLO VENTAS DEL DÍA AUTOMÁTICAMENTE
   ===================== */
+
+  // Fecha actual en Colombia (YYYY-MM-DD)
+  const hoyColombia = new Date().toLocaleDateString("en-CA", {
+    timeZone: "America/Bogota",
+  });
+
+  // Solo ventas activas
   const ventasActivas = ventas.filter((v) => !v.anulada);
 
-  const ventasFiltradas = ventasActivas.filter((v) => {
+  // Filtrar ventas del día automáticamente
+  const ventasDelDia = ventasActivas.filter((v) => {
+    const fechaRaw = v.fecha || v.fecha_venta;
+
+    const fechaVenta = new Date(fechaRaw).toLocaleDateString("en-CA", {
+      timeZone: "America/Bogota",
+    });
+
+    return fechaVenta === hoyColombia;
+  });
+
+  /* =====================
+     Filtros manuales sobre las del día
+  ===================== */
+  const ventasFiltradas = ventasDelDia.filter((v) => {
     const idOk = idBusqueda
       ? (v._id || "").toString().includes(idBusqueda)
       : true;
@@ -97,7 +118,7 @@ export default function Reportes() {
     const doc = new jsPDF({ unit: "pt", format: "a4" });
 
     doc.setFontSize(16);
-    doc.text("Reporte de Ventas", 40, 40);
+    doc.text("Reporte de Ventas del Día", 40, 40);
 
     autoTable(doc, {
       startY: 70,
@@ -111,7 +132,7 @@ export default function Reportes() {
       styles: { fontSize: 10 },
     });
 
-    doc.save("reporte_ventas.pdf");
+    doc.save("reporte_ventas_dia.pdf");
   };
 
   /* =====================
@@ -225,7 +246,7 @@ export default function Reportes() {
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
       <h1 className="text-3xl font-semibold text-center mb-8">
-        Reportes de Ventas
+        Ventas del Día
       </h1>
 
       {/* Resumen */}
@@ -265,7 +286,7 @@ export default function Reportes() {
         </button>
       </div>
 
-      {/* Tabla ventas activas */}
+      {/* Tabla ventas del día */}
       <div className="bg-white rounded shadow overflow-x-auto mb-8">
         <table className="w-full border-collapse">
           <thead className="bg-gray-50">
